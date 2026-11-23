@@ -1,0 +1,4 @@
+ALX_NAME="Algothix OS"
+ALX_EDITION="lite"
+ALX_VERSION="0.1.0"
+ALX_BASE_DIST="trixie"

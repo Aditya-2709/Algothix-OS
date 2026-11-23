@@ -1,0 +1,17 @@
+Source: alx-base
+Section: admin
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.local>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-base
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: Base configuration and defaults for Algothix OS (ALX) Lite
+ Provides core APT configuration (disabling recommended and suggested packages
+ by default to minimize RAM and disk footprint on older hardware), release
+ metadata under /etc/alx/release, and console login branding for Algothix OS.
