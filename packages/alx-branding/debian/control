@@ -1,0 +1,17 @@
+Source: alx-branding
+Section: misc
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.local>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-branding
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: Original logo, Calamares branding, slideshow, and first-boot welcome for ALX Lite
+ Provides original geometric SVG logo assets, Calamares dark slate/cyan
+ branding and QML slideshow, and the first-boot terminal welcome script
+ pointing users to alx-setup, alx-link, and alx-doctor.

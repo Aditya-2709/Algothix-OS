@@ -1,0 +1,29 @@
+---
+componentName: alx
+
+strings:
+    productName:         Algothix OS (ALX) Lite
+    shortProductName:    ALX Lite
+    version:             0.1
+    shortVersion:        0.1
+    versionedName:       Algothix OS (ALX) Lite 0.1
+    shortVersionedName:  ALX Lite 0.1
+    bootloaderEntryName: Algothix OS
+    productUrl:          https://algothix.com
+    supportUrl:          https://algothix.com
+    knownIssuesUrl:      https://algothix.com
+    releaseNotesUrl:     https://algothix.com
+
+images:
+    productLogo:         "logo.svg"
+    productIcon:         "logo.svg"
+    productWelcome:      "logo.svg"
+
+slideshow:               "show.qml"
+slideshowAPI:            2
+
+style:
+    SidebarBackground:        "#0f172a"
+    SidebarText:              "#cbd5e1"
+    SidebarTextCurrent:       "#f8fafc"
+    SidebarBackgroundCurrent: "#1e293b"
