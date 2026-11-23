@@ -1,0 +1,43 @@
+---
+- name: Configure UFW default-deny incoming and allow outgoing (FR-7.1)
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - ufw default deny incoming
+    - ufw default allow outgoing
+    - ufw --force enable
+  changed_when: false
+
+- name: Ensure security-only unattended-upgrades config is installed (FR-7.2)
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades-alx
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Unattended-Upgrade::Origins-Pattern {
+          "origin=Debian,codename=${distro_codename},label=Debian-Security";
+      };
+      Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+      Unattended-Upgrade::MinimalSteps "true";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+      Unattended-Upgrade::Automatic-Reboot "false";
+
+- name: Enable daily automatic security upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+- name: Ensure AppArmor and UFW systemd services are enabled (FR-7.5)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - ufw.service
+    - apparmor.service
+    - unattended-upgrades.service

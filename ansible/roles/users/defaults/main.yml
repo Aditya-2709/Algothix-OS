@@ -1,0 +1,11 @@
+---
+# Default fleet user list (override in host_vars/group_vars)
+alx_users: []
+# Example:
+# alx_users:
+#   - name: alice
+#     admin: true
+#     memory_max_mb: 1200
+#   - name: bob
+#     admin: false
+#     memory_max_mb: 1024

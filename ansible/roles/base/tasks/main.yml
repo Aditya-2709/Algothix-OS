@@ -1,0 +1,30 @@
+---
+- name: Ensure APT disables recommended packages (FR-1.1)
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/90alx-no-recommends
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      APT::Install-Recommends "false";
+      APT::Install-Suggests "false";
+
+- name: Ensure core ALX packages are installed
+  ansible.builtin.apt:
+    name:
+      - zram-tools
+      - earlyoom
+      - ufw
+      - unattended-upgrades
+      - apparmor
+    state: present
+    install_recommends: false
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Run alx-tune idempotently if installed
+  ansible.builtin.command: /usr/sbin/alx-tune
+  register: alx_tune_run
+  changed_when: "'Changes applied: 0' not in alx_tune_run.stdout"
+  failed_when: alx_tune_run.rc != 0
+  when: ansible_facts.get('os_family') == 'Debian'

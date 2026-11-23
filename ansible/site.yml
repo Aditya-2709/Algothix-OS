@@ -1,0 +1,9 @@
+---
+- name: Configure Algothix OS (ALX) Lite fleet
+  hosts: alx_fleet
+  become: true
+  roles:
+    - base
+    - users
+    - link
+    - hardening
