@@ -1,0 +1,120 @@
+#!/usr/bin/expect -f
+
+if {$argc < 3} {
+    puts stderr "Usage: smoke-boot.expect <timeout_sec> <log_file> <qemu_cmd...>"
+    exit 2
+}
+
+set timeout [lindex $argv 0]
+set log_file [lindex $argv 1]
+set qemu_cmd [lrange $argv 2 end]
+
+log_file -noappend $log_file
+
+eval spawn $qemu_cmd
+
+# Wait for console login prompt or live autologin shell prompt
+expect {
+    -re "alx login:" {
+        send "alx\r"
+        expect {
+            -re "Password:" {
+                send "live\r"
+                expect -re {alx@alx.*[$#%?] }
+            }
+            -re {alx@alx.*[$#%?] } {}
+        }
+    }
+    -re {alx@alx.*[$#%?] } {}
+    timeout {
+        puts stderr "FAIL: Timed out waiting for ALX login prompt."
+        exit 1
+    }
+    eof {
+        puts stderr "FAIL: QEMU exited before reaching login prompt."
+        exit 1
+    }
+}
+
+# M1: Verify /etc/os-release and hostname
+send "cat /etc/os-release\r"
+expect -re {NAME="Algothix OS"}
+expect -re {ID=alx}
+expect -re {ID_LIKE=debian}
+expect -re {alx@alx.*[$#%?] }
+
+send "hostname\r"
+expect -re {\malx\M}
+expect -re {alx@alx.*[$#%?] }
+
+# M2: Verify dev tools, rootless Podman, and LightDM/i3
+send "nvim --version | head -n 1 && tmux -V && git --version && podman --version\r"
+expect -re {NVIM}
+expect -re {podman version}
+expect -re {alx@alx.*[$#%?] }
+
+send "podman info --format '{{.Host.Security.Rootless}}'\r"
+expect -re {true}
+expect -re {alx@alx.*[$#%?] }
+
+send "systemctl is-enabled lightdm && command -v i3 && command -v i3status\r"
+expect -re {enabled}
+expect -re {alx@alx.*[$#%?] }
+
+# M3: Verify alx-tune profile (2 GB RAM -> alx-profile-low), zram, idempotency, and alx-doctor
+send "cat /etc/alx/profile\r"
+expect -re {alx-profile-low}
+expect -re {alx@alx.*[$#%?] }
+
+send "swapon --show\r"
+expect -re {/dev/zram}
+expect -re {alx@alx.*[$#%?] }
+
+send "sudo alx-tune\r"
+expect -re {Changes applied: 0}
+expect -re {alx@alx.*[$#%?] }
+
+send "alx-doctor --json\r"
+expect -re {"fail_count": 0}
+expect -re {alx@alx.*[$#%?] }
+
+# M4: Verify alx-setup python --dry-run and alx-update --dry-run
+send "alx-setup python --dry-run\r"
+expect -re {Expected disk cost}
+expect -re {alx@alx.*[$#%?] }
+
+send "alx-update --dry-run\r"
+expect -re {ALX Update summary:}
+expect -re {alx@alx.*[$#%?] }
+
+# Measure boot time and idle RAM (PRD Section 7: < 450 MB)
+send "systemd-analyze || true\r"
+expect -re {alx@alx.*[$#%?] }
+
+send "free -m\r"
+expect -re {alx@alx.*[$#%?] }
+
+send "used=\$(free -m | awk '/^Mem:/ {print \$3}'); echo \"ALX_IDLE_RAM_MB=\$used\"; test \"\$used\" -lt 450 && echo RAM_BUDGET_OK || echo RAM_BUDGET_EXCEEDED\r"
+expect {
+    -re {RAM_BUDGET_OK} {}
+    -re {RAM_BUDGET_EXCEEDED} {
+        puts stderr "FAIL: Idle RAM exceeded 450 MB budget (PRD Section 7)."
+        exit 1
+    }
+    timeout {
+        puts stderr "FAIL: Timed out checking idle RAM budget."
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
+
+# Clean shutdown
+send "sudo poweroff || poweroff\r"
+expect {
+    eof {}
+    timeout {
+        close
+    }
+}
+
+exit 0

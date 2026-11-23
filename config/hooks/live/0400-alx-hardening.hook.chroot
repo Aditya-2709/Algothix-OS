@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+# Algothix OS (ALX) Lite — Security Hardening Chroot Hook (FR-7.1..FR-7.5)
+# - Configure UFW default-deny incoming, allow outgoing, enabled at boot
+# - Enable AppArmor with Debian defaults
+# - Verify SSH server is not enabled by default
+
+if [ -f /etc/ufw/ufw.conf ]; then
+    sed -i 's/^ENABLED=.*/ENABLED=yes/' /etc/ufw/ufw.conf
+fi
+
+if [ -f /etc/default/ufw ]; then
+    sed -i 's/^DEFAULT_INPUT_POLICY=.*/DEFAULT_INPUT_POLICY="DROP"/' /etc/default/ufw
+    sed -i 's/^DEFAULT_OUTPUT_POLICY=.*/DEFAULT_OUTPUT_POLICY="ACCEPT"/' /etc/default/ufw
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+    for unit in ufw.service apparmor.service unattended-upgrades.service; do
+        if [ -f "/lib/systemd/system/${unit}" ] || [ -f "/usr/lib/systemd/system/${unit}" ]; then
+            systemctl enable "${unit}" || true
+        fi
+    done
+fi

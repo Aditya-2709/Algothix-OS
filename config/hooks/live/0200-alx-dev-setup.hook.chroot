@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+
+# Configure M2 developer defaults inside the live-build chroot:
+# - Default shell: zsh for newly created users
+# - Rootless Podman subuid/subgid mapping for the live user
+# - Enable LightDM display manager for ALX-i3 session
+
+if [ -x /usr/bin/zsh ]; then
+    if [ -f /etc/default/useradd ]; then
+        sed -i 's|^SHELL=.*|SHELL=/usr/bin/zsh|' /etc/default/useradd
+    fi
+    if [ -f /etc/adduser.conf ]; then
+        sed -i 's|^DSHELL=.*|DSHELL=/usr/bin/zsh|' /etc/adduser.conf
+    fi
+fi
+
+# Ensure subuid/subgid files exist and contain a range for the live 'alx' user
+touch /etc/subuid /etc/subgid
+if ! grep -q '^alx:' /etc/subuid; then
+    printf 'alx:100000:65536\n' >> /etc/subuid
+fi
+if ! grep -q '^alx:' /etc/subgid; then
+    printf 'alx:100000:65536\n' >> /etc/subgid
+fi
+
+# Enable LightDM when installed
+if command -v systemctl >/dev/null 2>&1 && [ -f /lib/systemd/system/lightdm.service ]; then
+    systemctl enable lightdm.service || true
+fi

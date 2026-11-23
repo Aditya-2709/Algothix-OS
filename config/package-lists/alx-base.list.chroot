@@ -1,0 +1,38 @@
+# Algothix OS (ALX) Lite — M1 Base Package Set (Debian 13 trixie amd64)
+# Every package below has been verified against Debian trixie repositories.
+# No Snap, Docker, telemetry, or desktop environment in M1 (console login only).
+
+# Init, kernel, and live system
+systemd
+systemd-sysv
+dbus
+linux-image-amd64
+live-boot
+live-config
+live-config-systemd
+
+# Console & localization
+locales
+console-setup
+kbd
+
+# Core system, networking, and performance (PRD Section 10: alx-base)
+network-manager
+zram-tools
+earlyoom
+ufw
+unattended-upgrades
+apparmor
+sudo
+curl
+ca-certificates
+gnupg
+
+# Free firmware (main)
+firmware-linux-free
+
+# Non-free firmware for target laptops (PRD Section 13 default: non-free-firmware)
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-misc-nonfree

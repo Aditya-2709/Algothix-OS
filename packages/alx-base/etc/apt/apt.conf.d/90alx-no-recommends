@@ -1,0 +1,3 @@
+// Algothix OS (ALX) Lite — keep disk and RAM footprint minimal (FR-1.1)
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";

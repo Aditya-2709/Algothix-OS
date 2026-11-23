@@ -1,0 +1,40 @@
+---
+- name: Ensure /etc/alx directory exists
+  ansible.builtin.file:
+    path: /etc/alx
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure /etc/alx/link.conf
+  ansible.builtin.copy:
+    dest: /etc/alx/link.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (alx link role)
+      NETWORK_BACKEND="{{ alx_link_backend }}"
+      SYNC_DIR="{{ alx_link_sync_dir }}"
+      PAIR_PORT={{ alx_link_pair_port }}
+      PAIR_TIMEOUT=120
+
+- name: Ensure Syncthing low-priority systemd user drop-in is present
+  ansible.builtin.file:
+    path: /etc/systemd/user/syncthing.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write Syncthing low-priority drop-in
+  ansible.builtin.copy:
+    dest: /etc/systemd/user/syncthing.service.d/50-alx-low-prio.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Service]
+      Nice=10
+      IOSchedulingClass=idle

@@ -1,0 +1,46 @@
+---
+- name: Ensure fleet users exist with ALX skeleton and zsh
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    shell: /usr/bin/zsh
+    skeleton: /etc/skel
+    create_home: true
+    groups: "{{ ['sudo'] if (item.admin | default(false)) else [] }}"
+    append: true
+    state: present
+  loop: "{{ alx_users }}"
+  register: created_users
+
+- name: Ensure per-user systemd slice drop-in directory exists
+  ansible.builtin.file:
+    path: "/etc/systemd/system/user-{{ item.uid }}.slice.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ created_users.results | default([]) }}"
+  when: item.uid is defined
+
+- name: Configure per-user systemd slice memory limits (FR-4.2)
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/user-{{ item.uid }}.slice.d/50-alx-limits.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Slice]
+      MemoryAccounting=yes
+      CPUAccounting=yes
+      TasksAccounting=yes
+      MemoryHigh={{ ((item.item.memory_max_mb | default(1228)) * 85 // 100) }}M
+      MemoryMax={{ item.item.memory_max_mb | default(1228) }}M
+      CPUWeight=100
+      TasksMax=512
+  loop: "{{ created_users.results | default([]) }}"
+  when: item.uid is defined
+  register: slice_updates
+
+- name: Reload systemd when slice limits change
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: slice_updates is changed

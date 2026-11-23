@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — Optional SSSD Client Setup for FreeIPA/LDAP (FR-4.5)
+# SSSD is NOT installed or running by default; this helper installs and
+# configures it on demand when joining a company directory.
+
+VERSION="0.1.0"
+DOMAIN=""
+SERVER=""
+BASE_DN=""
+DRY_RUN=0
+ROOT_DIR="${ALX_ROOT:-}"
+
+usage() {
+    cat <<'EOF'
+Usage: alx-join-domain --domain <domain> --server <ldap-uri> [OPTIONS]
+
+Configure optional SSSD client for FreeIPA or LDAP central authentication (FR-4.5).
+
+Options:
+  --domain <name>     Directory domain name (e.g. corp.example.com)
+  --server <uri>      LDAP/FreeIPA server URI (e.g. ldaps://ipa.corp.example.com)
+  --base-dn <dn>      LDAP search base DN (default: derived from --domain)
+  --dry-run           Show planned actions without modifying the system
+  --root <dir>        Write sssd.conf under alternate root (for testing)
+  -v, --version       Show version information
+  -h, --help          Show this help message
+EOF
+}
+
+domain_to_dn() {
+    local d="$1"
+    printf 'dc=%s\n' "${d//./,dc=}"
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            printf 'alx-join-domain %s\n' "${VERSION}"
+            exit 0
+            ;;
+        --domain)
+            [ "$#" -ge 2 ] || { echo "alx-join-domain: --domain requires a value" >&2; exit 2; }
+            DOMAIN="$2"
+            shift 2
+            ;;
+        --server)
+            [ "$#" -ge 2 ] || { echo "alx-join-domain: --server requires a value" >&2; exit 2; }
+            SERVER="$2"
+            shift 2
+            ;;
+        --base-dn)
+            [ "$#" -ge 2 ] || { echo "alx-join-domain: --base-dn requires a value" >&2; exit 2; }
+            BASE_DN="$2"
+            shift 2
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --root)
+            [ "$#" -ge 2 ] || { echo "alx-join-domain: --root requires a directory" >&2; exit 2; }
+            ROOT_DIR="${2%/}"
+            shift 2
+            ;;
+        *)
+            echo "alx-join-domain: unknown option: $1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [ -z "${DOMAIN}" ] || [ -z "${SERVER}" ]; then
+    echo "alx-join-domain: both --domain and --server are required." >&2
+    usage >&2
+    exit 2
+fi
+
+[ -n "${BASE_DN}" ] || BASE_DN="$(domain_to_dn "${DOMAIN}")"
+
+if [ "${DRY_RUN}" -eq 1 ]; then
+    echo "[dry-run] Would install: sssd sssd-ldap sssd-tools libpam-sss libnss-sss"
+    echo "[dry-run] Would write ${ROOT_DIR}/etc/sssd/sssd.conf (domain=${DOMAIN}, uri=${SERVER}, base_dn=${BASE_DN})"
+    echo "[dry-run] Would enable pam_mkhomedir and sssd.service"
+    exit 0
+fi
+
+if [ -z "${ROOT_DIR}" ] && [ "$(id -u)" -ne 0 ]; then
+    echo "alx-join-domain: root privileges required (run with sudo or --dry-run)." >&2
+    exit 1
+fi
+
+if [ -z "${ROOT_DIR}" ]; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y --no-install-recommends sssd sssd-ldap sssd-tools libpam-sss libnss-sss
+fi
+
+SSSD_DIR="${ROOT_DIR}/etc/sssd"
+mkdir -p "${SSSD_DIR}"
+cat > "${SSSD_DIR}/sssd.conf" <<EOF
+# Managed by alx-join-domain ${VERSION} (FR-4.5)
+[sssd]
+config_file_version = 2
+services = nss, pam
+domains = ${DOMAIN}
+
+[domain/${DOMAIN}]
+id_provider = ldap
+auth_provider = ldap
+ldap_uri = ${SERVER}
+ldap_search_base = ${BASE_DN}
+ldap_id_use_start_tls = true
+cache_credentials = true
+fallback_homedir = /home/%u
+default_shell = /usr/bin/zsh
+EOF
+chmod 0600 "${SSSD_DIR}/sssd.conf"
+
+if [ -z "${ROOT_DIR}" ]; then
+    pam-auth-update --enable mkhomedir --force || true
+    systemctl enable --now sssd.service || true
+fi
+
+echo "ALX Join Domain: configured SSSD for domain '${DOMAIN}' (${SERVER})."
+exit 0

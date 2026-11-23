@@ -1,0 +1,51 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DisableFirefoxAccounts": true,
+    "DisableFeedbackCommands": true,
+    "DisableSetDesktopBackground": true,
+    "DontCheckDefaultBrowser": true,
+    "NoDefaultBookmarks": true,
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": "",
+    "EnableTrackingProtection": {
+      "Value": true,
+      "Locked": false,
+      "Cryptomining": true,
+      "Fingerprinting": true
+    },
+    "FirefoxHome": {
+      "Search": true,
+      "TopSites": false,
+      "SponsoredTopSites": false,
+      "Highlights": false,
+      "Pocket": false,
+      "SponsoredPocket": false,
+      "Snippets": false
+    },
+    "Preferences": {
+      "browser.tabs.unloadOnLowMemory": {
+        "Value": true,
+        "Status": "default"
+      },
+      "browser.sessionhistory.max_total_viewers": {
+        "Value": 0,
+        "Status": "default"
+      },
+      "browser.cache.memory.capacity": {
+        "Value": 32768,
+        "Status": "default"
+      },
+      "dom.security.https_only_mode": {
+        "Value": true,
+        "Status": "default"
+      },
+      "toolkit.telemetry.enabled": {
+        "Value": false,
+        "Status": "locked"
+      }
+    }
+  }
+}
