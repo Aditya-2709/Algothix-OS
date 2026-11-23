@@ -1,0 +1,37 @@
+.TH ALX-DOCTOR 1 "November 2026" "Algothix OS 0.1.0" "User Commands"
+.SH NAME
+alx-doctor \- system health and performance diagnostics for Algothix OS (ALX) Lite
+.SH SYNOPSIS
+.B alx-doctor
+[\fB\-\-json\fR] [\fB\-\-root\fR \fIdir\fR] [\fB\-v\fR|\fB\-\-version\fR] [\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B alx-doctor
+inspects the current ALX hardware profile, RAM availability, zram/swap state,
+earlyoom status, disk type and free space, I/O scheduler udev rules, per-user
+systemd resource limits, failed systemd units, active heavy services, and top
+memory-consuming processes.
+.SH OPTIONS
+.TP
+.B \-\-json
+Emit structured JSON instead of a human-readable table.
+.TP
+.BI \-\-root " dir"
+Inspect an alternate root directory.
+.TP
+.B \-v, \-\-version
+Display version information.
+.TP
+.B \-h, \-\-help
+Display usage information.
+.SH EXIT STATUS
+.TP
+.B 0
+No FAIL checks detected.
+.TP
+.B 1
+One or more FAIL checks detected.
+.TP
+.B 2
+Invalid command-line options.
+.SH SEE ALSO
+.BR alx-tune (8)

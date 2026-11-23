@@ -1,0 +1,7 @@
+alx-doctor (0.1.0-1) trixie; urgency=medium
+
+  * Initial release for Algothix OS (ALX) Lite Milestone M3.
+  * Implement human-readable OK/WARN/FAIL diagnostic table and --json output.
+  * Add alx-doctor(1) man page.
+
+ -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 12:40:00 +0000
