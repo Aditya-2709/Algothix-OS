@@ -1,0 +1,50 @@
+name: ALX Lite Tagged Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Debian trixie builder image
+        run: make docker-build
+
+      - name: Build packages, lint, unit tests, ISO, and QEMU smoke tests
+        run: |
+          docker run --rm --privileged \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            alx-builder:trixie \
+            bash -lc "make packages && make lint && make test-unit && make iso && make test-qemu"
+
+      - name: Import release GPG key (if configured)
+        if: ${{ secrets.ALX_GPG_PRIVATE_KEY != '' }}
+        env:
+          ALX_GPG_PRIVATE_KEY: ${{ secrets.ALX_GPG_PRIVATE_KEY }}
+        run: |
+          printf '%s\n' "${ALX_GPG_PRIVATE_KEY}" | gpg --batch --import
+
+      - name: Generate SHA256SUMS and detached GPG signatures
+        env:
+          ALX_GPG_KEY_ID: ${{ secrets.ALX_GPG_KEY_ID }}
+        run: |
+          ./ci/release-sign.sh build/algothix-os-lite-amd64.iso build
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/algothix-os-lite-amd64.iso
+            build/SHA256SUMS
+            build/SHA256SUMS.asc
+            build/algothix-os-lite-amd64.iso.asc

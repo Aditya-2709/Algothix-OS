@@ -1,0 +1,14 @@
+.TH ALX-ADDUSER 8 "November 2026" "Algothix OS 0.1.0" "System Administration"
+.SH NAME
+alx-adduser \- create a new Algothix OS user with ALX defaults and systemd memory limits
+.SH SYNOPSIS
+.B alx-adduser
+\fIusername\fR [\fB\-\-admin\fR] [\fB\-\-memory\-max\fR \fIMiB\fR] [\fB\-\-dry\-run\fR]
+.SH DESCRIPTION
+.B alx-adduser
+creates a Linux user with \fI/etc/skel\fR ALX configs, \fBzsh\fR as default shell,
+optional \fBsudo\fR group membership, and a per-UID systemd slice drop-in
+(\fI/etc/systemd/system/user-<uid>.slice.d/50-alx-limits.conf\fR).
+.SH SEE ALSO
+.BR alx-tune (8),
+.BR alx-join-domain (8)

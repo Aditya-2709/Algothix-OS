@@ -1,0 +1,13 @@
+.TH ALX-JOIN-DOMAIN 8 "November 2026" "Algothix OS 0.1.0" "System Administration"
+.SH NAME
+alx-join-domain \- optional SSSD client setup for FreeIPA/LDAP in Algothix OS (ALX) Lite
+.SH SYNOPSIS
+.B alx-join-domain
+\fB\-\-domain\fR \fIdomain\fR \fB\-\-server\fR \fIldap-uri\fR [\fB\-\-base\-dn\fR \fIdn\fR] [\fB\-\-dry\-run\fR]
+.SH DESCRIPTION
+.B alx-join-domain
+installs SSSD on demand (not preinstalled by default), writes a mode-0600
+\fI/etc/sssd/sssd.conf\fR, enables \fBpam_mkhomedir\fR, and starts \fBsssd.service\fR.
+.SH SEE ALSO
+.BR alx-adduser (8),
+.BR sssd.conf (5)
