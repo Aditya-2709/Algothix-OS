@@ -1,0 +1,12 @@
+label live-@FLAVOUR@
+	menu label ^Algothix OS (ALX) Lite — Live Console (@FLAVOUR@)
+	menu default
+	linux @LINUX@
+	initrd @INITRD@
+	append @APPEND_LIVE@
+
+label live-@FLAVOUR@-nomodeset
+	menu label Algothix OS (ALX) Lite — Safe Graphics (nomodeset)
+	linux @LINUX@
+	initrd @INITRD@
+	append @APPEND_LIVE@ nomodeset

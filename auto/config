@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+
+ALX_DEBIAN_DIST="${ALX_DEBIAN_DIST:-trixie}"
+ALX_MIRROR="${ALX_MIRROR:-http://deb.debian.org/debian/}"
+ALX_SECURITY_MIRROR="${ALX_SECURITY_MIRROR:-http://security.debian.org/debian-security/}"
+
+lb config noauto \
+    --mode debian \
+    --distribution "${ALX_DEBIAN_DIST}" \
+    --architectures amd64 \
+    --archive-areas "main non-free-firmware" \
+    --apt-recommends false \
+    --apt-indices false \
+    --debian-installer false \
+    --binary-images iso-hybrid \
+    --bootloaders "syslinux,grub-efi" \
+    --linux-packages "linux-image" \
+    --linux-flavours amd64 \
+    --firmware-binary true \
+    --firmware-chroot true \
+    --mirror-bootstrap "${ALX_MIRROR}" \
+    --mirror-chroot "${ALX_MIRROR}" \
+    --mirror-chroot-security "${ALX_SECURITY_MIRROR}" \
+    --mirror-binary "${ALX_MIRROR}" \
+    --mirror-binary-security "${ALX_SECURITY_MIRROR}" \
+    --iso-application "Algothix OS (ALX) Lite" \
+    --iso-publisher "Algothix" \
+    --iso-volume "ALX_LITE_AMD64" \
+    --bootappend-live "boot=live components hostname=alx username=alx console=tty0 console=ttyS0,115200n8" \
+    "${@}"

@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+# Brand /etc/os-release (and /usr/lib/os-release), hostname, and console banner
+# for Algothix OS (ALX) Lite (PRD FR-6.5 & M1 AC).
+
+OS_RELEASE_CONTENT='PRETTY_NAME="Algothix OS (ALX) Lite 0.1"
+NAME="Algothix OS"
+VERSION_ID="0.1"
+VERSION="0.1 (Lite)"
+VERSION_CODENAME=trixie
+ID=alx
+ID_LIKE=debian
+HOME_URL="https://algothix.com"
+SUPPORT_URL="https://algothix.com"
+BUG_REPORT_URL="https://algothix.com"
+ANSI_COLOR="1;36"'
+
+printf '%s\n' "${OS_RELEASE_CONTENT}" > /usr/lib/os-release
+ln -sf ../usr/lib/os-release /etc/os-release
+
+# Set default hostname to "alx"
+printf 'alx\n' > /etc/hostname
+
+cat > /etc/hosts <<'EOF'
+127.0.0.1       localhost
+127.0.1.1       alx
+
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+EOF
+
+# Apply console banner from alx-base if installed
+if [ -f /etc/issue.alx ]; then
+    cp /etc/issue.alx /etc/issue
+    printf 'Algothix OS (ALX) Lite 0.1\n' > /etc/issue.net
+fi
+
+# Enable serial getty on ttyS0 so QEMU headless console login works cleanly
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl enable serial-getty@ttyS0.service || true
+fi
