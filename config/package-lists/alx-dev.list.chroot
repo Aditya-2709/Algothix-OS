@@ -1,0 +1,43 @@
+# Algothix OS (ALX) Lite — M2 Developer Layer (Debian 13 trixie amd64)
+# No Snap, no Docker, no heavy IDEs, no telemetry (PRD Section 2).
+
+# Compilers, VCS, and CLI utilities (FR-3.1)
+git
+build-essential
+clang
+make
+cmake
+gdb
+curl
+wget
+openssh-client
+jq
+htop
+ncdu
+
+# Editors (FR-3.2)
+neovim
+micro
+geany
+
+# Terminal and search tools (FR-3.3, FR-3.4)
+tmux
+zsh
+fzf
+ripgrep
+bat
+fd-find
+lazygit
+
+# Rootless containers — Podman only, no Docker (FR-3.5)
+podman
+uidmap
+slirp4netns
+fuse-overlayfs
+
+# Browser (FR-3.7)
+firefox-esr
+
+# Remote shell and sync foundations (verified in Debian trixie)
+mosh
+syncthing
