@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+
+VERSION="0.1.0"
+CHEATSHEET="${ALX_CHEATSHEET_PATH:-/usr/share/alx/cheatsheet.txt}"
+
+case "${1:-}" in
+    -h|--help)
+        printf 'Usage: alx-cheatsheet [--help|--version|--stdout]\n'
+        printf 'Display the Algothix OS (ALX) Lite keybinding cheat-sheet.\n'
+        exit 0
+        ;;
+    -v|--version)
+        printf 'alx-cheatsheet %s\n' "${VERSION}"
+        exit 0
+        ;;
+    --stdout)
+        cat "${CHEATSHEET}"
+        exit 0
+        ;;
+    "")
+        ;;
+    *)
+        printf 'alx-cheatsheet: unknown option: %s\n' "$1" >&2
+        exit 2
+        ;;
+esac
+
+if [ -n "${DISPLAY:-}" ] && command -v urxvt >/dev/null 2>&1; then
+    exec urxvt -title "ALX Keybindings" -e less -R "${CHEATSHEET}"
+elif [ -n "${DISPLAY:-}" ] && command -v xterm >/dev/null 2>&1; then
+    exec xterm -title "ALX Keybindings" -e less -R "${CHEATSHEET}"
+else
+    cat "${CHEATSHEET}"
+fi
