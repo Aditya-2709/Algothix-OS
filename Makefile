@@ -1,4 +1,4 @@
-SHELL := /bin/bash
+SHELL := /bin/sh
 .DEFAULT_GOAL := help
 
 ISO_OUT ?= build/algothix-os-lite-amd64.iso
@@ -9,7 +9,7 @@ DOCKER_IMAGE ?= alx-builder:trixie
 help: ## Show available make targets
 	@echo "Algothix OS (ALX) Lite - Build Targets"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 docker-build: ## Build the Debian trixie build-environment Docker image
 	docker build -t $(DOCKER_IMAGE) .
