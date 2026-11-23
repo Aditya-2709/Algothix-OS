@@ -5,16 +5,16 @@ A fast, lightweight, Debian-based Linux distribution for programming and multita
 ## Status
 
 - **Base:** Debian 13 (`trixie`, amd64) with `main` and `non-free-firmware`
-- **Current milestone:** M4 — ALX Setup & ALX Update (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`, `alx-setup`, `alx-update`)
+- **Current milestone:** M5 — ALX Link (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`, `alx-setup`, `alx-update`, `alx-link`)
 - **License:** GPL-3.0-or-later (see `LICENSE`)
 
 ## Repository Layout
 
 - `auto/` — `live-build` entry scripts (`config`, `build`, `clean`)
 - `config/` — `live-build` package lists, chroot hooks, includes, and bootloader branding
-- `packages/` — Debian source packages for ALX components (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`, `alx-setup`, `alx-update`, etc.)
+- `packages/` — Debian source packages for ALX components (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`, `alx-setup`, `alx-update`, `alx-link`, etc.)
 - `ansible/` — Fleet management roles (planned for M7)
-- `tests/` — Automated unit (`bats`), QEMU smoke tests, and hardware checklists
+- `tests/` — Automated unit (`bats`), QEMU smoke/link/security tests, and hardware checklists
 - `ci/` — Build, lint, and environment setup scripts
 - `.github/workflows/` — GitHub Actions CI pipeline
 - `docs/` — Architecture, engineering decisions (`DECISIONS.md`), and third-party packages (`THIRD_PARTY.md`)
