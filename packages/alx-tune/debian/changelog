@@ -1,0 +1,9 @@
+alx-tune (0.1.0-1) trixie; urgency=medium
+
+  * Initial release for Algothix OS (ALX) Lite Milestone M3.
+  * Implement hardware profile detection (alx-profile-low / alx-profile-mid).
+  * Configure zram, earlyoom, fallback swapfile, I/O scheduler udev rules,
+    service disabling, and per-user systemd resource limits idempotently.
+  * Add first-boot systemd oneshot service and alx-tune(8) man page.
+
+ -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 12:35:00 +0000

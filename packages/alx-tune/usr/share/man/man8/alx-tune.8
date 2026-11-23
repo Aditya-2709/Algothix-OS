@@ -1,0 +1,49 @@
+.TH ALX-TUNE 8 "November 2026" "Algothix OS 0.1.0" "System Administration"
+.SH NAME
+alx-tune \- hardware auto-tuner and resource-limit manager for Algothix OS (ALX) Lite
+.SH SYNOPSIS
+.B alx-tune
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B alx-tune
+detects system RAM, CPU AES-NI flags, GPU driver, and rotational storage devices,
+selects an appropriate hardware profile (\fBalx-profile-low\fR or \fBalx-profile-mid\fR),
+writes \fI/etc/alx/profile\fR, and idempotently configures zram (zstd, 50% RAM),
+earlyoom, a 1 GB fallback swapfile (when >= 10 GB disk space is free), per-user
+systemd slice memory limits, and disabled background services.
+.SH OPTIONS
+.TP
+.BI \-\-profile " name"
+Force hardware profile (\fBalx-profile-low\fR or \fBalx-profile-mid\fR).
+.TP
+.BI \-\-enable " service"
+Re-enable a disabled service (e.g. \fBbluetooth\fR, \fBcups\fR, \fBmodem\fR, \fBavahi\fR).
+.TP
+.BI \-\-disable " service"
+Disable and stop a service.
+.TP
+.B \-\-dry\-run
+Display planned changes without modifying files or services.
+.TP
+.BI \-\-root " dir"
+Operate on an alternate root directory.
+.TP
+.B \-v, \-\-version
+Display version information.
+.TP
+.B \-h, \-\-help
+Display usage information.
+.SH FILES
+.I /etc/alx/profile
+.br
+.I /etc/alx/hardware.env
+.br
+.I /etc/default/zramswap
+.br
+.I /etc/default/earlyoom
+.br
+.I /etc/systemd/system/user-.slice.d/50-alx-limits.conf
+.br
+.I /etc/udev/rules.d/60-alx-io-scheduler.rules
+.SH SEE ALSO
+.BR alx-doctor (1)

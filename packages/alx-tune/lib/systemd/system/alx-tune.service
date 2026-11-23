@@ -1,0 +1,13 @@
+[Unit]
+Description=Algothix OS (ALX) Lite First-Boot Hardware Auto-Tuner
+After=local-fs.target
+Before=zramswap.service earlyoom.service
+ConditionPathExists=!/etc/alx/profile
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/alx-tune --first-boot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
