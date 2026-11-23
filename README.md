@@ -5,7 +5,7 @@ A fast, lightweight, Debian-based Linux distribution for programming and multita
 ## Status
 
 - **Base:** Debian 13 (`trixie`, amd64) with `main` and `non-free-firmware`
-- **Current milestone:** M6 — Installer & Branding (`alx-branding`, `alx-installer-config`, Calamares ext4 + AES-NI LUKS gate)
+- **Current milestone:** M7 — Multi-User, Security Hardening & Ansible Fleet Management
 - **License:** GPL-3.0-or-later (see `LICENSE`)
 
 ## Repository Layout
@@ -13,8 +13,8 @@ A fast, lightweight, Debian-based Linux distribution for programming and multita
 - `auto/` — `live-build` entry scripts (`config`, `build`, `clean`)
 - `config/` — `live-build` package lists, chroot hooks, includes, and bootloader branding
 - `packages/` — Debian source packages (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`, `alx-setup`, `alx-update`, `alx-link`, `alx-branding`, `alx-installer-config`)
-- `ansible/` — Fleet management roles (planned for M7)
-- `tests/` — Automated unit (`bats`), QEMU smoke/link/install/security tests, and hardware checklists
+- `ansible/` — Fleet management playbook (`site.yml`) and roles (`base`, `users`, `link`, `hardening`)
+- `tests/` — Automated unit (`bats`), QEMU smoke/link/install/multi-user/security tests, and hardware checklists
 - `ci/` — Build, lint, and environment setup scripts
 - `.github/workflows/` — GitHub Actions CI pipeline
 - `docs/` — Architecture, engineering decisions (`DECISIONS.md`), and third-party packages (`THIRD_PARTY.md`)
@@ -44,11 +44,4 @@ make packages    # Build ALX .deb packages into build/repo
 make iso         # Build the bootable hybrid ISO (BIOS + UEFI)
 make test        # Run bats unit tests and QEMU BIOS/UEFI smoke tests
 make clean       # Clean build artifacts
-```
-
-To build inside the Docker container (requires `--privileged` for `live-build` chroot/loop mounts):
-
-```bash
-docker run --rm --privileged -v "$(pwd):/src" -w /src alx-builder:trixie \
-  bash -lc "make packages && make lint && make test-unit && make iso && make test-qemu"
 ```
