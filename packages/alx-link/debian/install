@@ -1,0 +1,5 @@
+usr/bin/alx-link usr/bin
+usr/lib/alx-link/alx-link-core.py usr/lib/alx-link
+usr/share/man/man1/alx-link.1 usr/share/man/man1
+etc/alx/link.conf etc/alx
+etc/systemd/user/syncthing.service.d/50-alx-low-prio.conf etc/systemd/user/syncthing.service.d
