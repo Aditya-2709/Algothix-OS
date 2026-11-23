@@ -1,0 +1,4 @@
+# Algothix OS (ALX) Lite — Live-Only Installer Packages (PRD Section 10)
+# Verified in Debian 13 (trixie). Removed automatically post-install.
+calamares
+calamares-settings-debian

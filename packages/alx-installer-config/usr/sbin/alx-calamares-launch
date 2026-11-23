@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — Calamares Installer Launcher with AES-NI LUKS Gate (FR-6.2)
+# Stages /usr/share/alx/calamares into a runtime config directory, sets
+# enableLuksAutomatedPartitioning based on CPU AES-NI support, warns on CPUs
+# lacking AES-NI, and launches Calamares with `-c <runtime_dir>`.
+
+VERSION="0.1.0"
+DRY_RUN=0
+SRC_DIR="${ALX_CALAMARES_SRC:-/usr/share/alx/calamares}"
+RUNTIME_DIR="${ALX_CALAMARES_RUNTIME:-/run/alx-calamares}"
+PROC_CPUINFO="${ALX_PROC_CPUINFO:-/proc/cpuinfo}"
+
+usage() {
+    cat <<'EOF'
+Usage: alx-calamares-launch [--dry-run] [--help] [--version]
+
+Prepare AES-NI-aware Calamares configuration and launch the ALX Lite installer.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            printf 'alx-calamares-launch %s\n' "${VERSION}"
+            exit 0
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        *)
+            echo "alx-calamares-launch: unknown option: $1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+HAS_AES="no"
+if [ -r "${PROC_CPUINFO}" ] && grep -Eq '^flags[[:space:]]*:.*\baes\b' "${PROC_CPUINFO}"; then
+    HAS_AES="yes"
+fi
+
+rm -rf "${RUNTIME_DIR}"
+mkdir -p "${RUNTIME_DIR}"
+cp -a "${SRC_DIR}/." "${RUNTIME_DIR}/"
+
+PARTITION_CONF="${RUNTIME_DIR}/modules/partition.conf"
+if [ "${HAS_AES}" = "yes" ]; then
+    sed -i 's/^enableLuksAutomatedPartitioning:.*/enableLuksAutomatedPartitioning: true/' "${PARTITION_CONF}"
+    echo "ALX Installer: CPU supports AES-NI — LUKS disk encryption option ENABLED."
+else
+    sed -i 's/^enableLuksAutomatedPartitioning:.*/enableLuksAutomatedPartitioning: false/' "${PARTITION_CONF}"
+    echo "ALX Installer WARNING: CPU lacks AES-NI — LUKS disk encryption DISABLED to protect performance on older hardware (FR-6.2)."
+fi
+
+if [ "${DRY_RUN}" -eq 1 ]; then
+    echo "[dry-run] Staged Calamares config in ${RUNTIME_DIR} (enableLuksAutomatedPartitioning=$(awk '/^enableLuksAutomatedPartitioning:/ {print $2}' "${PARTITION_CONF}"))."
+    exit 0
+fi
+
+if command -v pkexec >/dev/null 2>&1 && [ "$(id -u)" -ne 0 ]; then
+    exec pkexec calamares -c "${RUNTIME_DIR}"
+else
+    exec calamares -c "${RUNTIME_DIR}"
+fi

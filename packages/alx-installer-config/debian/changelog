@@ -1,0 +1,8 @@
+alx-installer-config (0.1.0-1) trixie; urgency=medium
+
+  * Initial release for Algothix OS (ALX) Lite Milestone M6.
+  * Add ext4-only Calamares partition config and noatime/commit=60 fstab config.
+  * Add alx-calamares-launch wrapper gating LUKS encryption on CPU AES-NI support.
+  * Add post-install shellprocess enabling first-boot alx-tune.
+
+ -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 13:20:00 +0000
