@@ -1,0 +1,9 @@
+alx-setup (0.1.0-1) trixie; urgency=medium
+
+  * Initial release for Algothix OS (ALX) Lite Milestone M4.
+  * Implement on-demand language profiles (python, node, go, rust, web, cpp, java)
+    and optional editor-vscodium helper with low-profile RAM warnings.
+  * Print expected disk and RAM costs prior to install; support --dry-run.
+  * Add alx-setup(1) man page.
+
+ -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 12:50:00 +0000
