@@ -1,0 +1,28 @@
+.TH ALX-UPDATE 8 "November 2026" "Algothix OS 0.1.0" "System Administration"
+.SH NAME
+alx-update \- AC-power and idle-aware system updater for Algothix OS (ALX) Lite
+.SH SYNOPSIS
+.B alx-update
+[\fB\-\-dry\-run\fR] [\fB\-\-force\fR] [\fB\-v\fR|\fB\-\-version\fR] [\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+.B alx-update
+wraps \fBapt-get update\fR and \fBapt-get full-upgrade\fR, running only when
+the machine is connected to AC power (or has no battery) and 1-minute CPU load
+is below 75% of available cores. Can be run manually or enabled via
+\fBsystemctl enable --now alx-update.timer\fR.
+.SH OPTIONS
+.TP
+.B \-\-dry\-run
+Run AC-power and idle checks and preview the update without modifying packages.
+.TP
+.B \-\-force
+Bypass AC-power and idle-load guards.
+.TP
+.B \-v, \-\-version
+Display version information.
+.TP
+.B \-h, \-\-help
+Display usage information.
+.SH SEE ALSO
+.BR alx-setup (1),
+.BR alx-doctor (1)
