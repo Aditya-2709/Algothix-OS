@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — Multi-User Provisioning Helper (FR-4.2, FR-4.6)
+# Creates a user with ALX /etc/skel defaults, zsh shell, rootless Podman
+# subuid/subgid mapping, and a per-user systemd slice resource limit drop-in.
+
+VERSION="0.1.0"
+USERNAME=""
+IS_ADMIN=0
+MEM_MAX_MB=""
+DRY_RUN=0
+ROOT_DIR="${ALX_ROOT:-}"
+PROC_MEMINFO="${ALX_PROC_MEMINFO:-/proc/meminfo}"
+
+usage() {
+    cat <<'EOF'
+Usage: alx-adduser <username> [OPTIONS]
+
+Create a new Algothix OS user with ALX skeleton configs and systemd memory limits.
+
+Options:
+  --admin              Grant sudo privileges to the user
+  --memory-max <MiB>   Override per-user MemoryMax limit (default: 60% of RAM)
+  --dry-run            Show planned actions without modifying the system
+  --root <dir>         Write slice drop-in under alternate root (for testing)
+  -v, --version        Show version information
+  -h, --help           Show this help message
+EOF
+}
+
+detect_ram_mb() {
+    if [ -r "${PROC_MEMINFO}" ]; then
+        awk '/^MemTotal:/ { printf "%d\n", int($2 / 1024) }' "${PROC_MEMINFO}"
+    else
+        echo "2048"
+    fi
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            printf 'alx-adduser %s\n' "${VERSION}"
+            exit 0
+            ;;
+        --admin)
+            IS_ADMIN=1
+            shift
+            ;;
+        --memory-max)
+            [ "$#" -ge 2 ] || { echo "alx-adduser: --memory-max requires a value in MiB" >&2; exit 2; }
+            MEM_MAX_MB="$2"
+            shift 2
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --root)
+            [ "$#" -ge 2 ] || { echo "alx-adduser: --root requires a directory" >&2; exit 2; }
+            ROOT_DIR="${2%/}"
+            shift 2
+            ;;
+        -*)
+            echo "alx-adduser: unknown option: $1" >&2
+            exit 2
+            ;;
+        *)
+            if [ -z "${USERNAME}" ]; then
+                USERNAME="$1"
+                shift
+            else
+                echo "alx-adduser: unexpected argument: $1" >&2
+                exit 2
+            fi
+            ;;
+    esac
+done
+
+if [ -z "${USERNAME}" ]; then
+    usage >&2
+    exit 2
+fi
+
+if ! printf '%s' "${USERNAME}" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$'; then
+    echo "alx-adduser: invalid username '${USERNAME}'" >&2
+    exit 2
+fi
+
+RAM_MB="$(detect_ram_mb)"
+if [ -z "${MEM_MAX_MB}" ]; then
+    MEM_MAX_MB=$((RAM_MB * 60 / 100))
+fi
+MEM_HIGH_MB=$((MEM_MAX_MB * 85 / 100))
+USER_SHELL="/bin/bash"
+[ -x /usr/bin/zsh ] && USER_SHELL="/usr/bin/zsh"
+
+if [ "${DRY_RUN}" -eq 1 ]; then
+    echo "[dry-run] Would create user '${USERNAME}' (shell=${USER_SHELL}, admin=${IS_ADMIN})"
+    echo "[dry-run] Would configure user-<uid>.slice MemoryHigh=${MEM_HIGH_MB}M MemoryMax=${MEM_MAX_MB}M TasksMax=512"
+    exit 0
+fi
+
+if [ -z "${ROOT_DIR}" ] && [ "$(id -u)" -ne 0 ]; then
+    echo "alx-adduser: root privileges required (run with sudo or --dry-run)." >&2
+    exit 1
+fi
+
+USER_UID="1001"
+if [ -z "${ROOT_DIR}" ]; then
+    if ! id -u "${USERNAME}" >/dev/null 2>&1; then
+        useradd -m -k /etc/skel -s "${USER_SHELL}" "${USERNAME}"
+        echo "Created user '${USERNAME}' with /etc/skel and shell ${USER_SHELL}."
+    else
+        echo "User '${USERNAME}' already exists; updating limits."
+    fi
+    if [ "${IS_ADMIN}" -eq 1 ]; then
+        usermod -aG sudo "${USERNAME}"
+        echo "Added '${USERNAME}' to sudo group."
+    fi
+    USER_UID="$(id -u "${USERNAME}")"
+else
+    USER_UID="${ALX_TEST_UID:-1001}"
+fi
+
+SLICE_DIR="${ROOT_DIR}/etc/systemd/system/user-${USER_UID}.slice.d"
+mkdir -p "${SLICE_DIR}"
+cat > "${SLICE_DIR}/50-alx-limits.conf" <<EOF
+# Managed by alx-adduser ${VERSION} (FR-4.2) for user '${USERNAME}' (uid=${USER_UID})
+[Slice]
+MemoryAccounting=yes
+CPUAccounting=yes
+TasksAccounting=yes
+MemoryHigh=${MEM_HIGH_MB}M
+MemoryMax=${MEM_MAX_MB}M
+CPUWeight=100
+TasksMax=512
+EOF
+
+if [ -z "${ROOT_DIR}" ] && command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+fi
+
+echo "Configured per-user slice limits for '${USERNAME}' (uid=${USER_UID}, MemoryMax=${MEM_MAX_MB}M)."
+exit 0

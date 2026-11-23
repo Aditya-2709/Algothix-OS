@@ -1,3 +1,5 @@
 etc/apt/apt.conf.d/90alx-no-recommends etc/apt/apt.conf.d
 etc/alx/release etc/alx
 etc/issue.alx etc
+usr/sbin/alx-adduser usr/sbin
+usr/sbin/alx-join-domain usr/sbin
