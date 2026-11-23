@@ -5,14 +5,14 @@ A fast, lightweight, Debian-based Linux distribution for programming and multita
 ## Status
 
 - **Base:** Debian 13 (`trixie`, amd64) with `main` and `non-free-firmware`
-- **Current milestone:** M1 — Minimal bootable console ISO (`alx-base`)
+- **Current milestone:** M2 — ALX-i3 Desktop & Developer Layer (`alx-base`, `alx-desktop-i3`, `alx-dev`)
 - **License:** GPL-3.0-or-later (see `LICENSE`)
 
 ## Repository Layout
 
 - `auto/` — `live-build` entry scripts (`config`, `build`, `clean`)
 - `config/` — `live-build` package lists, chroot hooks, includes, and bootloader branding
-- `packages/` — Debian source packages for ALX components (`alx-base`, etc.)
+- `packages/` — Debian source packages for ALX components (`alx-base`, `alx-desktop-i3`, etc.)
 - `ansible/` — Fleet management roles (planned for M7)
 - `tests/` — Automated unit (`bats`), QEMU smoke tests, and hardware checklists
 - `ci/` — Build, lint, and environment setup scripts
@@ -49,5 +49,6 @@ make clean       # Clean build artifacts
 To build inside the Docker container (requires `--privileged` for `live-build` chroot/loop mounts):
 
 ```bash
-docker run --rm --privileged -v "$(pwd):/src" -w /src alx-builder make packages iso
+docker run --rm --privileged -v "$(pwd):/src" -w /src alx-builder:trixie \
+  bash -lc "make packages && make lint && make test-unit && make iso && make test-qemu"
 ```

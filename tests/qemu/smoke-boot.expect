@@ -20,12 +20,12 @@ expect {
         expect {
             -re "Password:" {
                 send "live\r"
-                expect -re {alx@alx:.*[$#] }
+                expect -re {alx@alx.*[$#%?] }
             }
-            -re {alx@alx:.*[$#] } {}
+            -re {alx@alx.*[$#%?] } {}
         }
     }
-    -re {alx@alx:.*[$#] } {}
+    -re {alx@alx.*[$#%?] } {}
     timeout {
         puts stderr "FAIL: Timed out waiting for ALX login prompt."
         exit 1
@@ -36,7 +36,7 @@ expect {
     }
 }
 
-# Verify /etc/os-release
+# M1: Verify /etc/os-release
 send "cat /etc/os-release\r"
 expect {
     -re {NAME="Algothix OS"} {}
@@ -59,9 +59,9 @@ expect {
         exit 1
     }
 }
-expect -re {alx@alx:.*[$#] }
+expect -re {alx@alx.*[$#%?] }
 
-# Verify hostname
+# M1: Verify hostname
 send "hostname\r"
 expect {
     -re {\malx\M} {}
@@ -70,21 +70,73 @@ expect {
         exit 1
     }
 }
-expect -re {alx@alx:.*[$#] }
+expect -re {alx@alx.*[$#%?] }
 
-# Measure boot time and idle RAM
+# M2: Verify dev tools and rootless Podman
+send "nvim --version | head -n 1 && tmux -V && git --version && podman --version\r"
+expect {
+    -re {NVIM} {}
+    timeout {
+        puts stderr "FAIL: nvim not available"
+        exit 1
+    }
+}
+expect {
+    -re {podman version} {}
+    timeout {
+        puts stderr "FAIL: podman not available"
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
+
+send "podman info --format '{{.Host.Security.Rootless}}'\r"
+expect {
+    -re {true} {}
+    timeout {
+        puts stderr "FAIL: podman rootless mode not active"
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
+
+# M2: Verify LightDM and i3 installed
+send "systemctl is-enabled lightdm && command -v i3 && command -v i3status\r"
+expect {
+    -re {enabled} {}
+    timeout {
+        puts stderr "FAIL: lightdm is not enabled"
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
+
+# Measure boot time and idle RAM (PRD Section 7: < 450 MB)
 send "systemd-analyze || true\r"
-expect -re {alx@alx:.*[$#] }
+expect -re {alx@alx.*[$#%?] }
 
 send "free -m\r"
-expect -re {alx@alx:.*[$#] }
+expect -re {alx@alx.*[$#%?] }
+
+send "used=\$(free -m | awk '/^Mem:/ {print \$3}'); echo \"ALX_IDLE_RAM_MB=\$used\"; test \"\$used\" -lt 450 && echo RAM_BUDGET_OK || echo RAM_BUDGET_EXCEEDED\r"
+expect {
+    -re {RAM_BUDGET_OK} {}
+    -re {RAM_BUDGET_EXCEEDED} {
+        puts stderr "FAIL: Idle RAM exceeded 450 MB budget (PRD Section 7)."
+        exit 1
+    }
+    timeout {
+        puts stderr "FAIL: Timed out checking idle RAM budget."
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
 
 # Clean shutdown
 send "sudo poweroff || poweroff\r"
 expect {
     eof {}
     timeout {
-        # Force quit QEMU monitor/process if guest did not halt in time
         close
     }
 }
