@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+# Enable ALX Tune first-boot service, zramswap, and earlyoom in the image chroot.
+if command -v systemctl >/dev/null 2>&1; then
+    for unit in alx-tune.service zramswap.service earlyoom.service; do
+        if [ -f "/lib/systemd/system/${unit}" ] || [ -f "/usr/lib/systemd/system/${unit}" ]; then
+            systemctl enable "${unit}" || true
+        fi
+    done
+fi

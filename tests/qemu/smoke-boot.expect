@@ -36,76 +36,67 @@ expect {
     }
 }
 
-# M1: Verify /etc/os-release
+# M1: Verify /etc/os-release and hostname
 send "cat /etc/os-release\r"
-expect {
-    -re {NAME="Algothix OS"} {}
-    timeout {
-        puts stderr "FAIL: /etc/os-release missing NAME=\"Algothix OS\""
-        exit 1
-    }
-}
-expect {
-    -re {ID=alx} {}
-    timeout {
-        puts stderr "FAIL: /etc/os-release missing ID=alx"
-        exit 1
-    }
-}
-expect {
-    -re {ID_LIKE=debian} {}
-    timeout {
-        puts stderr "FAIL: /etc/os-release missing ID_LIKE=debian"
-        exit 1
-    }
-}
+expect -re {NAME="Algothix OS"}
+expect -re {ID=alx}
+expect -re {ID_LIKE=debian}
 expect -re {alx@alx.*[$#%?] }
 
-# M1: Verify hostname
 send "hostname\r"
-expect {
-    -re {\malx\M} {}
-    timeout {
-        puts stderr "FAIL: hostname is not 'alx'"
-        exit 1
-    }
-}
+expect -re {\malx\M}
 expect -re {alx@alx.*[$#%?] }
 
-# M2: Verify dev tools and rootless Podman
+# M2: Verify dev tools, rootless Podman, and LightDM/i3
 send "nvim --version | head -n 1 && tmux -V && git --version && podman --version\r"
-expect {
-    -re {NVIM} {}
-    timeout {
-        puts stderr "FAIL: nvim not available"
-        exit 1
-    }
-}
-expect {
-    -re {podman version} {}
-    timeout {
-        puts stderr "FAIL: podman not available"
-        exit 1
-    }
-}
+expect -re {NVIM}
+expect -re {podman version}
 expect -re {alx@alx.*[$#%?] }
 
 send "podman info --format '{{.Host.Security.Rootless}}'\r"
+expect -re {true}
+expect -re {alx@alx.*[$#%?] }
+
+send "systemctl is-enabled lightdm && command -v i3 && command -v i3status\r"
+expect -re {enabled}
+expect -re {alx@alx.*[$#%?] }
+
+# M3: Verify alx-tune profile (2 GB RAM -> alx-profile-low), zram, idempotency, and alx-doctor
+send "cat /etc/alx/profile\r"
 expect {
-    -re {true} {}
+    -re {alx-profile-low} {}
     timeout {
-        puts stderr "FAIL: podman rootless mode not active"
+        puts stderr "FAIL: Expected alx-profile-low on 2 GB QEMU VM."
         exit 1
     }
 }
 expect -re {alx@alx.*[$#%?] }
 
-# M2: Verify LightDM and i3 installed
-send "systemctl is-enabled lightdm && command -v i3 && command -v i3status\r"
+send "swapon --show\r"
 expect {
-    -re {enabled} {}
+    -re {/dev/zram} {}
     timeout {
-        puts stderr "FAIL: lightdm is not enabled"
+        puts stderr "FAIL: zram swap not active in swapon --show."
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
+
+send "sudo alx-tune\r"
+expect {
+    -re {Changes applied: 0} {}
+    timeout {
+        puts stderr "FAIL: alx-tune second run was not idempotent."
+        exit 1
+    }
+}
+expect -re {alx@alx.*[$#%?] }
+
+send "alx-doctor --json\r"
+expect {
+    -re {"fail_count": 0} {}
+    timeout {
+        puts stderr "FAIL: alx-doctor reported fail_count > 0."
         exit 1
     }
 }

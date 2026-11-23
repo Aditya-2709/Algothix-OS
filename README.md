@@ -5,14 +5,14 @@ A fast, lightweight, Debian-based Linux distribution for programming and multita
 ## Status
 
 - **Base:** Debian 13 (`trixie`, amd64) with `main` and `non-free-firmware`
-- **Current milestone:** M2 — ALX-i3 Desktop & Developer Layer (`alx-base`, `alx-desktop-i3`, `alx-dev`)
+- **Current milestone:** M3 — ALX Tune & ALX Doctor (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`)
 - **License:** GPL-3.0-or-later (see `LICENSE`)
 
 ## Repository Layout
 
 - `auto/` — `live-build` entry scripts (`config`, `build`, `clean`)
 - `config/` — `live-build` package lists, chroot hooks, includes, and bootloader branding
-- `packages/` — Debian source packages for ALX components (`alx-base`, `alx-desktop-i3`, etc.)
+- `packages/` — Debian source packages for ALX components (`alx-base`, `alx-desktop-i3`, `alx-tune`, `alx-doctor`, etc.)
 - `ansible/` — Fleet management roles (planned for M7)
 - `tests/` — Automated unit (`bats`), QEMU smoke tests, and hardware checklists
 - `ci/` — Build, lint, and environment setup scripts
