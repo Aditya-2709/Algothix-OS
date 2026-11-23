@@ -1,0 +1,37 @@
+# Build outputs
+build/
+*.iso
+*.img
+*.qcow2
+*.deb
+*.dsc
+*.changes
+*.buildinfo
+*.tar.xz
+*.tar.gz
+SHA256SUMS*
+
+# live-build runtime directories and state
+.build/
+binary/
+cache/
+chroot/
+local/
+scratch/
+binary.*
+chroot.*
+live-image-*
+
+# Debian packaging build artifacts
+packages/*/.debhelper/
+packages/*/debian/.debhelper/
+packages/*/debian/files
+packages/*/debian/*.substvars
+packages/*/debian/*.debhelper.log
+packages/*/debian/tmp/
+packages/alx-base/debian/alx-base/
+
+# Editor / OS junk
+*~
+*.swp
+.DS_Store
