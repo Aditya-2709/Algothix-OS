@@ -1,0 +1,92 @@
+#!/usr/bin/expect -f
+
+if {$argc < 3} {
+    puts stderr "Usage: smoke-boot.expect <timeout_sec> <log_file> <qemu_cmd...>"
+    exit 2
+}
+
+set timeout [lindex $argv 0]
+set log_file [lindex $argv 1]
+set qemu_cmd [lrange $argv 2 end]
+
+log_file -noappend $log_file
+
+eval spawn $qemu_cmd
+
+# Wait for console login prompt or live autologin shell prompt
+expect {
+    -re "alx login:" {
+        send "alx\r"
+        expect {
+            -re "Password:" {
+                send "live\r"
+                expect -re {alx@alx:.*[$#] }
+            }
+            -re {alx@alx:.*[$#] } {}
+        }
+    }
+    -re {alx@alx:.*[$#] } {}
+    timeout {
+        puts stderr "FAIL: Timed out waiting for ALX login prompt."
+        exit 1
+    }
+    eof {
+        puts stderr "FAIL: QEMU exited before reaching login prompt."
+        exit 1
+    }
+}
+
+# Verify /etc/os-release
+send "cat /etc/os-release\r"
+expect {
+    -re {NAME="Algothix OS"} {}
+    timeout {
+        puts stderr "FAIL: /etc/os-release missing NAME=\"Algothix OS\""
+        exit 1
+    }
+}
+expect {
+    -re {ID=alx} {}
+    timeout {
+        puts stderr "FAIL: /etc/os-release missing ID=alx"
+        exit 1
+    }
+}
+expect {
+    -re {ID_LIKE=debian} {}
+    timeout {
+        puts stderr "FAIL: /etc/os-release missing ID_LIKE=debian"
+        exit 1
+    }
+}
+expect -re {alx@alx:.*[$#] }
+
+# Verify hostname
+send "hostname\r"
+expect {
+    -re {\malx\M} {}
+    timeout {
+        puts stderr "FAIL: hostname is not 'alx'"
+        exit 1
+    }
+}
+expect -re {alx@alx:.*[$#] }
+
+# Measure boot time and idle RAM
+send "systemd-analyze || true\r"
+expect -re {alx@alx:.*[$#] }
+
+send "free -m\r"
+expect -re {alx@alx:.*[$#] }
+
+# Clean shutdown
+send "sudo poweroff || poweroff\r"
+expect {
+    eof {}
+    timeout {
+        # Force quit QEMU monitor/process if guest did not halt in time
+        close
+    }
+}
+
+exit 0
