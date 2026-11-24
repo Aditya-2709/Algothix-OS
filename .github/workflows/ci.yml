@@ -20,7 +20,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
-            bats debhelper devscripts dpkg-dev fakeroot lintian make reprepro shellcheck
+            bats build-essential debhelper devscripts dpkg-dev fakeroot lintian make reprepro shellcheck
 
       - name: Verify make help
         run: make help
