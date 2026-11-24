@@ -12,6 +12,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
     bats \
+    build-essential \
     ca-certificates \
     cpio \
     debhelper \

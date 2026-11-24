@@ -1,0 +1,6 @@
+# Algothix OS (ALX) Lite — I/O scheduler tuning (FR-1.5)
+# Rotational HDDs: bfq (for interactive responsiveness under load)
+# Non-rotational SSDs/NVMe: none (lowest CPU overhead)
+
+ACTION=="add|change", KERNEL=="sd[a-z]*|hd[a-z]*|vd[a-z]*", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="bfq"
+ACTION=="add|change", KERNEL=="sd[a-z]*|nvme[0-9]n[0-9]*|vd[a-z]*", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="none"

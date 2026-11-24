@@ -1,0 +1,4 @@
+usr/sbin/alx-update usr/sbin
+usr/share/man/man8/alx-update.8 usr/share/man/man8
+usr/lib/systemd/system/alx-update.service usr/lib/systemd/system
+usr/lib/systemd/system/alx-update.timer usr/lib/systemd/system

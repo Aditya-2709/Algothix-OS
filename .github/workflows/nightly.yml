@@ -1,0 +1,41 @@
+name: ALX Lite Nightly Build & Budget Check
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly-build-and-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Debian trixie builder image
+        run: make docker-build
+
+      - name: Build packages, lint, unit tests, and ISO
+        run: |
+          docker run --rm --privileged \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            alx-builder:trixie \
+            bash -lc "make packages && make lint && make test-unit && make iso"
+
+      - name: Enforce ISO size (<1.5 GB) and QEMU idle RAM (<450 MB) budgets
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            alx-builder:trixie \
+            make test-qemu
+
+      - name: Upload nightly ISO and SHA256SUMS
+        uses: actions/upload-artifact@v4
+        with:
+          name: algothix-os-lite-nightly
+          retention-days: 7
+          path: |
+            build/algothix-os-lite-amd64.iso
+            build/SHA256SUMS

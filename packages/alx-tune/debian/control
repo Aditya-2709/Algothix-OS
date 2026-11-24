@@ -1,0 +1,19 @@
+Source: alx-tune
+Section: admin
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-tune
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, zram-tools, earlyoom, systemd, udev
+Description: Hardware auto-tuner and resource-limit manager for Algothix OS (ALX) Lite
+ Detects system RAM, CPU AES-NI support, GPU driver, and disk rotational state
+ at first boot, selects an ALX hardware profile (alx-profile-low or
+ alx-profile-mid), configures zram (zstd, 50% RAM), earlyoom, fallback swap,
+ I/O scheduler udev rules, per-user systemd slice memory limits, and disables
+ unnecessary background services. Fully idempotent and re-runnable.

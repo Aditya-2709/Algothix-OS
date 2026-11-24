@@ -1,0 +1,6 @@
+usr/bin/alx-welcome usr/bin
+etc/profile.d/alx-welcome.sh etc/profile.d
+usr/share/alx/logo.svg usr/share/alx
+usr/share/alx/calamares/branding/alx/branding.desc usr/share/alx/calamares/branding/alx
+usr/share/alx/calamares/branding/alx/logo.svg usr/share/alx/calamares/branding/alx
+usr/share/alx/calamares/branding/alx/show.qml usr/share/alx/calamares/branding/alx

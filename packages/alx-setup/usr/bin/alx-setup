@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — On-Demand Developer Language Profile Installer (FR-3.6, FR-3.8)
+# Uses verified Debian 13 (trixie) packages, prints expected disk and RAM costs
+# before installing, and supports --dry-run and --yes modes.
+
+VERSION="0.1.0"
+DRY_RUN=0
+ASSUME_YES=0
+PROFILE=""
+APT_CMD="${ALX_APT_CMD:-apt-get}"
+PROFILE_FILE="${ALX_PROFILE_FILE:-/etc/alx/profile}"
+
+usage() {
+    cat <<'EOF'
+Usage: alx-setup <profile|list> [OPTIONS]
+
+Install on-demand developer language profiles for Algothix OS (ALX) Lite.
+
+Profiles:
+  python           Python 3, pip, venv, pytest
+  node             Node.js and npm
+  go               Go compiler and toolchain (golang-go)
+  rust             Rust compiler, Cargo, and rustfmt
+  web              Node.js, npm, sqlite3, curl, jq
+  cpp              GCC/Clang, clangd, CMake, Ninja, GDB, Valgrind
+  java             OpenJDK headless and Maven
+  editor-vscodium  Optional VSCodium setup guide (heavy RAM warning)
+  list             List all profiles with expected disk and RAM cost
+
+Options:
+  --dry-run        Show cost estimate and packages without installing
+  -y, --yes        Skip confirmation prompt
+  -v, --version    Show version information
+  -h, --help       Show this help message
+EOF
+}
+
+list_profiles() {
+    printf '%-16s %-12s %-18s %s\n' "PROFILE" "DISK COST" "TYPICAL RAM" "PACKAGES"
+    printf '%-16s %-12s %-18s %s\n' "----------------" "------------" "------------------" "----------------------------------------"
+    printf '%-16s %-12s %-18s %s\n' "python" "~110 MB" "40-150 MB" "python3 python3-pip python3-venv python3-pytest"
+    printf '%-16s %-12s %-18s %s\n' "node" "~160 MB" "80-300 MB" "nodejs npm"
+    printf '%-16s %-12s %-18s %s\n' "go" "~420 MB" "100-350 MB" "golang-go"
+    printf '%-16s %-12s %-18s %s\n' "rust" "~850 MB" "300-900 MB" "rustc cargo rustfmt"
+    printf '%-16s %-12s %-18s %s\n' "web" "~175 MB" "80-350 MB" "nodejs npm sqlite3 curl jq"
+    printf '%-16s %-12s %-18s %s\n' "cpp" "~520 MB" "150-500 MB" "build-essential clang clangd cmake ninja-build gdb valgrind pkg-config"
+    printf '%-16s %-12s %-18s %s\n' "java" "~480 MB" "250-700 MB" "default-jdk-headless maven"
+    printf '%-16s %-12s %-18s %s\n' "editor-vscodium" "~380 MB" "400-900 MB (HIGH)" "Optional upstream VSCodium (not preinstalled)"
+}
+
+current_hw_profile() {
+    if [ -r "${PROFILE_FILE}" ]; then
+        head -n 1 "${PROFILE_FILE}" | tr -d '[:space:]'
+    else
+        echo "unknown"
+    fi
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            printf 'alx-setup %s\n' "${VERSION}"
+            exit 0
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        -y|--yes)
+            ASSUME_YES=1
+            shift
+            ;;
+        -*)
+            echo "alx-setup: unknown option: $1" >&2
+            exit 2
+            ;;
+        *)
+            if [ -z "${PROFILE}" ]; then
+                PROFILE="$1"
+                shift
+            else
+                echo "alx-setup: unexpected argument: $1" >&2
+                exit 2
+            fi
+            ;;
+    esac
+done
+
+if [ -z "${PROFILE}" ]; then
+    usage >&2
+    exit 2
+fi
+
+if [ "${PROFILE}" = "list" ]; then
+    list_profiles
+    exit 0
+fi
+
+DISK_EST=""
+RAM_EST=""
+HEAVY_WARN=0
+PACKAGES=()
+
+case "${PROFILE}" in
+    python)
+        DISK_EST="~110 MB"
+        RAM_EST="40-150 MB"
+        PACKAGES=(python3 python3-pip python3-venv python3-pytest)
+        ;;
+    node)
+        DISK_EST="~160 MB"
+        RAM_EST="80-300 MB"
+        PACKAGES=(nodejs npm)
+        ;;
+    go)
+        DISK_EST="~420 MB"
+        RAM_EST="100-350 MB"
+        PACKAGES=(golang-go)
+        ;;
+    rust)
+        DISK_EST="~850 MB"
+        RAM_EST="300-900 MB (cargo builds can spike on 2 GB RAM)"
+        HEAVY_WARN=1
+        PACKAGES=(rustc cargo rustfmt)
+        ;;
+    web)
+        DISK_EST="~175 MB"
+        RAM_EST="80-350 MB"
+        PACKAGES=(nodejs npm sqlite3 curl jq)
+        ;;
+    cpp)
+        DISK_EST="~520 MB"
+        RAM_EST="150-500 MB"
+        PACKAGES=(build-essential clang clangd cmake ninja-build gdb valgrind pkg-config)
+        ;;
+    java)
+        DISK_EST="~480 MB"
+        RAM_EST="250-700 MB"
+        HEAVY_WARN=1
+        PACKAGES=(default-jdk-headless maven)
+        ;;
+    editor-vscodium)
+        DISK_EST="~380 MB"
+        RAM_EST="400-900 MB (Electron)"
+        HEAVY_WARN=1
+        HW_PROF="$(current_hw_profile)"
+        echo "ALX Setup: profile=editor-vscodium"
+        echo "  Expected disk cost : ${DISK_EST}"
+        echo "  Expected RAM usage : ${RAM_EST}"
+        if [ "${HW_PROF}" = "alx-profile-low" ]; then
+            echo "  WARNING: Current hardware profile is alx-profile-low (2-3 GB RAM)."
+            echo "           VSCodium (Electron) may trigger heavy swapping or earlyoom."
+            echo "           Prefer neovim, micro, or geany on 2 GB systems."
+        fi
+        if [ "${DRY_RUN}" -eq 1 ]; then
+            echo "[dry-run] Would configure VSCodium upstream apt repository and install 'codium'."
+            exit 0
+        fi
+        echo "VSCodium is an optional third-party package not included in Debian main."
+        echo "See /usr/share/doc/alx-setup or docs/THIRD_PARTY.md for the signed upstream repo steps."
+        exit 0
+        ;;
+    *)
+        echo "alx-setup: unknown profile '${PROFILE}'. Run 'alx-setup list' to see available profiles." >&2
+        exit 2
+        ;;
+esac
+
+HW_PROF="$(current_hw_profile)"
+echo "ALX Setup: profile=${PROFILE}"
+echo "  Expected disk cost : ${DISK_EST}"
+echo "  Expected RAM usage : ${RAM_EST}"
+echo "  Packages           : ${PACKAGES[*]}"
+
+if [ "${HEAVY_WARN}" -eq 1 ] && [ "${HW_PROF}" = "alx-profile-low" ]; then
+    echo "  WARNING: '${PROFILE}' can use significant RAM on alx-profile-low (2-3 GB RAM)."
+    echo "           Consider limiting parallel jobs (e.g., CARGO_BUILD_JOBS=1) or offloading builds with alx-link."
+fi
+
+if [ "${DRY_RUN}" -eq 1 ]; then
+    echo "[dry-run] Would run: ${APT_CMD} update && ${APT_CMD} install -y --no-install-recommends ${PACKAGES[*]}"
+    exit 0
+fi
+
+if [ "${ASSUME_YES}" -eq 0 ] && [ -t 0 ]; then
+    printf 'Proceed with installing %s? [y/N] ' "${PROFILE}"
+    read -r reply
+    case "${reply}" in
+        y|Y|yes|YES) ;;
+        *)
+            echo "Aborted."
+            exit 0
+            ;;
+    esac
+fi
+
+if [ "${APT_CMD}" = "apt-get" ] && [ "$(id -u)" -ne 0 ]; then
+    if command -v sudo >/dev/null 2>&1; then
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends "${PACKAGES[@]}"
+    else
+        echo "alx-setup: root privileges required (run with sudo)." >&2
+        exit 1
+    fi
+else
+    "${APT_CMD}" update
+    "${APT_CMD}" install -y --no-install-recommends "${PACKAGES[@]}"
+fi
+
+echo "ALX Setup: '${PROFILE}' profile installed successfully."
+exit 0

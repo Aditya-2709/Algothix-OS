@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — AC-Power & Idle-Aware System Updater (PRD 6.6)
+# Wraps apt-get update && apt-get full-upgrade with AC-power and CPU-load idle
+# checks, printing a concise upgrade summary.
+
+VERSION="0.1.0"
+DRY_RUN=0
+FORCE=0
+APT_CMD="${ALX_APT_CMD:-apt-get}"
+POWER_DIR="${ALX_POWER_DIR:-/sys/class/power_supply}"
+PROC_LOADAVG="${ALX_PROC_LOADAVG:-/proc/loadavg}"
+REBOOT_FLAG="${ALX_REBOOT_FLAG:-/var/run/reboot-required}"
+
+usage() {
+    cat <<'EOF'
+Usage: alx-update [OPTIONS]
+
+Run apt-get update && apt-get full-upgrade when on AC power and system is idle.
+
+Options:
+  --dry-run      Run power/idle checks and simulate upgrade without modifying packages
+  --force        Bypass AC-power and idle-load checks
+  -v, --version  Show version information
+  -h, --help     Show this help message
+
+Exit codes:
+  0  Update completed or deferred cleanly (battery/busy)
+  1  Error during update or insufficient privileges
+  2  Invalid arguments
+EOF
+}
+
+is_on_ac_power() {
+    local supply type found_mains=0
+    if [ ! -d "${POWER_DIR}" ]; then
+        return 0
+    fi
+    for supply in "${POWER_DIR}"/*; do
+        [ -d "${supply}" ] || continue
+        [ -r "${supply}/type" ] || continue
+        type="$(cat "${supply}/type")"
+        if [ "${type}" = "Mains" ]; then
+            found_mains=1
+            if [ -r "${supply}/online" ] && [ "$(cat "${supply}/online")" = "1" ]; then
+                return 0
+            fi
+        fi
+    done
+    # If no Mains supply exists (desktop/VM), treat as AC powered
+    if [ "${found_mains}" -eq 0 ]; then
+        return 0
+    fi
+    return 1
+}
+
+is_system_idle() {
+    local load1 cpus threshold
+    [ -r "${PROC_LOADAVG}" ] || return 0
+    load1="$(awk '{ print $1 }' "${PROC_LOADAVG}")"
+    if [ -n "${ALX_CPU_COUNT:-}" ]; then
+        cpus="${ALX_CPU_COUNT}"
+    elif command -v nproc >/dev/null 2>&1; then
+        cpus="$(nproc)"
+    else
+        cpus=1
+    fi
+    # Idle when 1-minute load average <= 0.75 * CPU cores (minimum 0.75)
+    threshold="$(awk -v c="${cpus}" 'BEGIN { t = c * 0.75; if (t < 0.75) t = 0.75; printf "%.2f", t }')"
+    awk -v l="${load1}" -v t="${threshold}" 'BEGIN { exit !(l <= t) }'
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            printf 'alx-update %s\n' "${VERSION}"
+            exit 0
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --force)
+            FORCE=1
+            shift
+            ;;
+        *)
+            echo "alx-update: unknown option: $1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [ "${FORCE}" -eq 0 ]; then
+    if ! is_on_ac_power; then
+        echo "ALX Update: skipped (system is running on battery; use --force to override)."
+        exit 0
+    fi
+    if ! is_system_idle; then
+        echo "ALX Update: skipped (system load is high; use --force to override)."
+        exit 0
+    fi
+fi
+
+if [ "${APT_CMD}" = "apt-get" ] && [ "${DRY_RUN}" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
+    echo "alx-update: root privileges required (run with sudo or --dry-run)." >&2
+    exit 1
+fi
+
+echo "ALX Update: starting package index refresh and full-upgrade..."
+
+if [ "${DRY_RUN}" -eq 1 ]; then
+    echo "[dry-run] Would run: ${APT_CMD} update && ${APT_CMD} -y full-upgrade"
+    if [ "${APT_CMD}" != "apt-get" ]; then
+        "${APT_CMD}" --simulate full-upgrade
+    fi
+    echo "ALX Update summary: dry-run complete (no packages modified)."
+    exit 0
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+"${APT_CMD}" update -qq
+UPGRADE_LOG="$(mktemp)"
+trap 'rm -f "${UPGRADE_LOG}"' EXIT
+
+"${APT_CMD}" -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" full-upgrade | tee "${UPGRADE_LOG}"
+
+SUMMARY_LINE="$(grep -E '^[0-9]+ upgraded,' "${UPGRADE_LOG}" | tail -n 1 || true)"
+if [ -n "${SUMMARY_LINE}" ]; then
+    echo "ALX Update summary: ${SUMMARY_LINE}"
+else
+    echo "ALX Update summary: system is up to date."
+fi
+
+if [ -f "${REBOOT_FLAG}" ]; then
+    echo "ALX Update notice: a reboot is required to complete kernel/system updates."
+fi
+
+exit 0

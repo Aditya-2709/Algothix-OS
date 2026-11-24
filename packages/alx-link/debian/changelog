@@ -1,0 +1,9 @@
+alx-link (0.1.0-1) trixie; urgency=medium
+
+  * Initial release for Algothix OS (ALX) Lite Milestone M5.
+  * Implement PIN-authenticated pairing, SSH key/config exchange, Syncthing
+    config automation, Input Leap config generation, send, clip, run, status,
+    and idempotent unpair.
+  * Add low-priority systemd user drop-in for Syncthing and alx-link(1) man page.
+
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 13:10:00 +0000

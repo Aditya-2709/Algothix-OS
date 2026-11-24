@@ -1,0 +1,27 @@
+configuration {
+    modi: "drun,run,window";
+    font: "JetBrains Mono 10";
+    show-icons: false;
+    terminal: "urxvt";
+}
+
+* {
+    bg: #0f172a;
+    bg-alt: #1e293b;
+    fg: #f8fafc;
+    accent: #38bdf8;
+    background-color: @bg;
+    text-color: @fg;
+}
+
+window {
+    border: 2px;
+    border-color: @accent;
+    padding: 8px;
+    width: 40%;
+}
+
+element selected {
+    background-color: @bg-alt;
+    text-color: @accent;
+}

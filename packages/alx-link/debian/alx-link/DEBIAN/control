@@ -1,0 +1,15 @@
+Package: alx-link
+Version: 0.1.0-1
+Architecture: all
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Installed-Size: 44
+Depends: python3, openssh-client, tmux, mosh, syncthing, xclip, wireguard-tools
+Section: net
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://algothix.com
+Description: Cross-device pairing and workspace sharing for Algothix OS (ALX) Lite
+ Pairs two or more Algothix OS machines with a one-time PIN confirmation code,
+ exchanging SSH keys, configuring Syncthing (~/ALX-Sync at idle I/O priority),
+ generating Input Leap keyboard/mouse sharing configs, and providing file send,
+ clipboard push, remote tmux execution, status reporting, and clean unpairing.

@@ -8,7 +8,7 @@ DEBS_DIR="${BUILD_DIR}/debs"
 REPO_DIR="${BUILD_DIR}/repo"
 DIST_CODENAME="${ALX_DEBIAN_DIST:-trixie}"
 
-mkdir -p "${DEBS_DIR}" "${REPO_DIR}/conf"
+rm -rf "${REPO_DIR}" && mkdir -p "${DEBS_DIR}" "${REPO_DIR}/conf"
 
 cat > "${REPO_DIR}/conf/distributions" <<EOF
 Origin: Algothix

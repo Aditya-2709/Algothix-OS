@@ -1,0 +1,396 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — Hardware Auto-Tuner (FR-1.2..FR-1.8, FR-4.2)
+# Detects RAM, CPU AES-NI, GPU driver, and rotational disks; applies a hardware
+# profile idempotently and configures zram, earlyoom, fallback swap, per-user
+# systemd resource limits, and disabled background services.
+
+VERSION="0.1.0"
+ROOT_DIR="${ALX_ROOT:-}"
+DRY_RUN=0
+PROFILE_OVERRIDE=""
+ENABLE_SVC=""
+DISABLE_SVC=""
+CHANGES=0
+
+PROC_MEMINFO="${ALX_PROC_MEMINFO:-/proc/meminfo}"
+PROC_CPUINFO="${ALX_PROC_CPUINFO:-/proc/cpuinfo}"
+SYS_BLOCK="${ALX_SYS_BLOCK:-/sys/block}"
+SYS_DRM="${ALX_SYS_DRM:-/sys/class/drm}"
+
+DISABLED_SERVICES=(
+    "bluetooth.service"
+    "cups.service"
+    "cups-browsed.service"
+    "ModemManager.service"
+    "avahi-daemon.service"
+    "avahi-daemon.socket"
+)
+
+usage() {
+    cat <<'EOF'
+Usage: alx-tune [OPTIONS]
+
+Detect hardware and apply Algothix OS (ALX) Lite tuning idempotently.
+
+Options:
+  --profile <name>   Force hardware profile (alx-profile-low | alx-profile-mid)
+  --enable <svc>     Re-enable a disabled service (bluetooth, cups, modem, avahi, or unit)
+  --disable <svc>    Disable a service
+  --dry-run          Show planned changes without modifying files or services
+  --root <dir>       Operate on an alternate root directory (for testing/chroots)
+  -v, --version      Show version information
+  -h, --help         Show this help message
+EOF
+}
+
+normalize_service_name() {
+    case "$1" in
+        bluetooth) echo "bluetooth.service" ;;
+        cups) echo "cups.service" ;;
+        modem|modemmanager|ModemManager) echo "ModemManager.service" ;;
+        avahi|avahi-daemon) echo "avahi-daemon.service" ;;
+        *.service|*.socket|*.timer) echo "$1" ;;
+        *) echo "${1}.service" ;;
+    esac
+}
+
+is_live_host() {
+    [ -z "${ROOT_DIR}" ] && [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1
+}
+
+write_file_idempotent() {
+    local rel_path="$1"
+    local content="$2"
+    local mode="${3:-0644}"
+    local target="${ROOT_DIR}${rel_path}"
+    local tmp_file
+
+    tmp_file="$(mktemp)"
+    printf '%s\n' "${content}" > "${tmp_file}"
+
+    if [ -f "${target}" ] && cmp -s "${tmp_file}" "${target}"; then
+        rm -f "${tmp_file}"
+        return 1
+    fi
+
+    CHANGES=$((CHANGES + 1))
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        echo "[dry-run] Would update ${target}"
+        rm -f "${tmp_file}"
+        return 0
+    fi
+
+    mkdir -p "$(dirname "${target}")"
+    mv "${tmp_file}" "${target}"
+    chmod "${mode}" "${target}"
+    echo "Updated ${target}"
+    return 0
+}
+
+detect_ram_mb() {
+    if [ -r "${PROC_MEMINFO}" ]; then
+        awk '/^MemTotal:/ { printf "%d\n", int($2 / 1024) }' "${PROC_MEMINFO}"
+    else
+        echo "2048"
+    fi
+}
+
+detect_aes_ni() {
+    if [ -r "${PROC_CPUINFO}" ] && grep -Eq '^flags[[:space:]]*:.*\baes\b' "${PROC_CPUINFO}"; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
+
+detect_rotational_disk() {
+    local dev rot
+    if [ -d "${SYS_BLOCK}" ]; then
+        for dev in "${SYS_BLOCK}"/*; do
+            [ -d "${dev}" ] || continue
+            case "$(basename "${dev}")" in
+                loop*|ram*|zram*|dm-*|sr*) continue ;;
+            esac
+            rot="${dev}/queue/rotational"
+            if [ -r "${rot}" ] && [ "$(cat "${rot}")" = "1" ]; then
+                echo "yes"
+                return 0
+            fi
+        done
+    fi
+    echo "no"
+}
+
+detect_gpu_driver() {
+    local uevent drv=""
+    if [ -d "${SYS_DRM}" ]; then
+        for uevent in "${SYS_DRM}"/card*/device/uevent; do
+            [ -r "${uevent}" ] || continue
+            drv="$(awk -F= '/^DRIVER=/ { print $2; exit }' "${uevent}")"
+            if [ -n "${drv}" ]; then
+                echo "${drv}"
+                return 0
+            fi
+        done
+    fi
+    echo "unknown"
+}
+
+select_profile() {
+    local ram_mb="$1"
+    local has_aes="$2"
+
+    if [ -n "${PROFILE_OVERRIDE}" ]; then
+        case "${PROFILE_OVERRIDE}" in
+            alx-profile-low|alx-profile-mid)
+                echo "${PROFILE_OVERRIDE}"
+                return 0
+                ;;
+            *)
+                echo "alx-tune: invalid profile '${PROFILE_OVERRIDE}' (expected alx-profile-low or alx-profile-mid)" >&2
+                exit 2
+                ;;
+        esac
+    fi
+
+    # PRD Section 4: 2-3 GB RAM or no AES-NI -> alx-profile-low; >= 4 GB with AES-NI -> alx-profile-mid
+    if [ "${ram_mb}" -le 3584 ] || [ "${has_aes}" = "no" ]; then
+        echo "alx-profile-low"
+    else
+        echo "alx-profile-mid"
+    fi
+}
+
+configure_service_state() {
+    local action="$1"
+    local unit="$2"
+
+    if ! is_live_host; then
+        echo "Skipping live systemd ${action} for ${unit} (offline/root mode)."
+        return 0
+    fi
+
+    if [ "${action}" = "enable" ]; then
+        if [ "${DRY_RUN}" -eq 1 ]; then
+            echo "[dry-run] Would unmask, enable, and start ${unit}"
+            CHANGES=$((CHANGES + 1))
+            return 0
+        fi
+        systemctl unmask "${unit}" >/dev/null 2>&1 || true
+        systemctl enable --now "${unit}" >/dev/null 2>&1 || true
+        echo "Enabled ${unit}"
+        CHANGES=$((CHANGES + 1))
+    else
+        if systemctl is-enabled "${unit}" >/dev/null 2>&1 || systemctl is-active "${unit}" >/dev/null 2>&1; then
+            CHANGES=$((CHANGES + 1))
+            if [ "${DRY_RUN}" -eq 1 ]; then
+                echo "[dry-run] Would disable and stop ${unit}"
+                return 0
+            fi
+            systemctl disable --now "${unit}" >/dev/null 2>&1 || true
+            echo "Disabled ${unit}"
+        fi
+    fi
+}
+
+configure_fallback_swap() {
+    local swapfile="${ROOT_DIR}/swapfile"
+    local avail_mb
+
+    # Only create fallback swap on live host when >= 10 GB free (FR-1.4)
+    if [ -n "${ROOT_DIR}" ] || [ -f "${swapfile}" ]; then
+        return 0
+    fi
+
+    avail_mb="$(df -Pm / | awk 'NR==2 { print $4 }')"
+    if [ "${avail_mb}" -lt 10240 ]; then
+        echo "Skipping 1 GB fallback /swapfile (only ${avail_mb} MiB free; requires >= 10240 MiB)."
+        return 0
+    fi
+
+    CHANGES=$((CHANGES + 1))
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        echo "[dry-run] Would create 1 GB fallback /swapfile (pri=-2)"
+        return 0
+    fi
+
+    if command -v fallocate >/dev/null 2>&1; then
+        fallocate -l 1G "${swapfile}"
+    else
+        dd if=/dev/zero of="${swapfile}" bs=1M count=1024 status=none
+    fi
+    chmod 0600 "${swapfile}"
+    mkswap "${swapfile}" >/dev/null
+    swapon -p -2 "${swapfile}" || true
+    if [ -f /etc/fstab ] && ! grep -q '^/swapfile[[:space:]]' /etc/fstab; then
+        printf '/swapfile none swap sw,pri=-2 0 0\n' >> /etc/fstab
+    fi
+    echo "Created and enabled 1 GB fallback /swapfile"
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -v|--version)
+            printf 'alx-tune %s\n' "${VERSION}"
+            exit 0
+            ;;
+        --profile)
+            [ "$#" -ge 2 ] || { echo "alx-tune: --profile requires an argument" >&2; exit 2; }
+            PROFILE_OVERRIDE="$2"
+            shift 2
+            ;;
+        --enable)
+            [ "$#" -ge 2 ] || { echo "alx-tune: --enable requires a service name" >&2; exit 2; }
+            ENABLE_SVC="$2"
+            shift 2
+            ;;
+        --disable)
+            [ "$#" -ge 2 ] || { echo "alx-tune: --disable requires a service name" >&2; exit 2; }
+            DISABLE_SVC="$2"
+            shift 2
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --root)
+            [ "$#" -ge 2 ] || { echo "alx-tune: --root requires a directory" >&2; exit 2; }
+            ROOT_DIR="${2%/}"
+            shift 2
+            ;;
+        --first-boot)
+            shift
+            ;;
+        *)
+            echo "alx-tune: unknown option: $1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [ -n "${ENABLE_SVC}" ]; then
+    configure_service_state "enable" "$(normalize_service_name "${ENABLE_SVC}")"
+    exit 0
+fi
+
+if [ -n "${DISABLE_SVC}" ]; then
+    configure_service_state "disable" "$(normalize_service_name "${DISABLE_SVC}")"
+    exit 0
+fi
+
+if [ -z "${ROOT_DIR}" ] && [ "${DRY_RUN}" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
+    echo "alx-tune: root privileges are required (run with sudo, --dry-run, or --root)." >&2
+    exit 1
+fi
+
+RAM_MB="$(detect_ram_mb)"
+HAS_AES="$(detect_aes_ni)"
+IS_ROTATIONAL="$(detect_rotational_disk)"
+GPU_DRIVER="$(detect_gpu_driver)"
+PROFILE="$(select_profile "${RAM_MB}" "${HAS_AES}")"
+
+# Per-user systemd slice limits scaled to detected RAM (FR-4.2)
+MEM_HIGH_MB=$((RAM_MB * 65 / 100))
+MEM_MAX_MB=$((RAM_MB * 75 / 100))
+if [ "${PROFILE}" = "alx-profile-low" ]; then
+    TASKS_MAX=512
+    COMPOSITOR="disabled"
+    ENCRYPTION_ALLOWED="no"
+else
+    TASKS_MAX=1024
+    COMPOSITOR="optional"
+    ENCRYPTION_ALLOWED="yes"
+fi
+
+echo "ALX Tune: profile=${PROFILE} ram=${RAM_MB}MiB aes=${HAS_AES} hdd=${IS_ROTATIONAL} gpu=${GPU_DRIVER}"
+
+write_file_idempotent "/etc/alx/profile" "${PROFILE}" 0644 || true
+
+HARDWARE_ENV="# Generated by alx-tune ${VERSION}
+ALX_PROFILE=\"${PROFILE}\"
+ALX_RAM_MB=${RAM_MB}
+ALX_CPU_AES=\"${HAS_AES}\"
+ALX_ROTATIONAL_DISK=\"${IS_ROTATIONAL}\"
+ALX_GPU_DRIVER=\"${GPU_DRIVER}\"
+ALX_COMPOSITOR=\"${COMPOSITOR}\"
+ALX_ENCRYPTION_ALLOWED=\"${ENCRYPTION_ALLOWED}\""
+write_file_idempotent "/etc/alx/hardware.env" "${HARDWARE_ENV}" 0644 || true
+
+# FR-1.2: zram (zstd, 50% of RAM, vm.swappiness=100)
+ZRAM_CONF="# Managed by alx-tune (FR-1.2)
+ALGO=zstd
+PERCENT=50
+PRIORITY=100"
+ZRAM_CHANGED=0
+if write_file_idempotent "/etc/default/zramswap" "${ZRAM_CONF}" 0644; then
+    ZRAM_CHANGED=1
+fi
+
+SYSCTL_ZRAM="# Managed by alx-tune (FR-1.2)
+vm.swappiness = 100
+vm.vfs_cache_pressure = 50
+vm.page-cluster = 0"
+SYSCTL_CHANGED=0
+if write_file_idempotent "/etc/sysctl.d/90-alx-zram.conf" "${SYSCTL_ZRAM}" 0644; then
+    SYSCTL_CHANGED=1
+fi
+
+# FR-1.3: earlyoom configuration
+EARLYOOM_CONF="# Managed by alx-tune (FR-1.3)
+EARLYOOM_ARGS=\"-r 60 -m 5 -s 10 --avoid '(^|/)(init|systemd|sshd|i3|Xorg|lightdm)\$' --prefer '(^|/)(firefox|firefox-esr|Web Content|Isolated Web Co|cc1plus|clang|rustc|node|java)\$'\""
+EARLYOOM_CHANGED=0
+if write_file_idempotent "/etc/default/earlyoom" "${EARLYOOM_CONF}" 0644; then
+    EARLYOOM_CHANGED=1
+fi
+
+# FR-4.2: Per-user resource limits via systemd user-.slice drop-in
+USER_SLICE_CONF="# Managed by alx-tune (FR-4.2) — scaled for ${RAM_MB} MiB RAM
+[Slice]
+MemoryAccounting=yes
+CPUAccounting=yes
+TasksAccounting=yes
+MemoryHigh=${MEM_HIGH_MB}M
+MemoryMax=${MEM_MAX_MB}M
+CPUWeight=100
+TasksMax=${TASKS_MAX}"
+SLICE_CHANGED=0
+if write_file_idempotent "/etc/systemd/system/user-.slice.d/50-alx-limits.conf" "${USER_SLICE_CONF}" 0644; then
+    SLICE_CHANGED=1
+fi
+
+# FR-1.4: Optional 1 GB fallback swapfile if >= 10 GB free
+configure_fallback_swap
+
+# Apply live service updates only when running on a booted systemd host
+if is_live_host && [ "${DRY_RUN}" -eq 0 ]; then
+    if [ "${SYSCTL_CHANGED}" -eq 1 ]; then
+        sysctl --system >/dev/null 2>&1 || true
+    fi
+    if [ "${ZRAM_CHANGED}" -eq 1 ] || ! systemctl is-active zramswap.service >/dev/null 2>&1; then
+        systemctl enable --now zramswap.service >/dev/null 2>&1 || true
+        if [ "${ZRAM_CHANGED}" -eq 1 ]; then
+            systemctl restart zramswap.service >/dev/null 2>&1 || true
+        fi
+    fi
+    if [ "${EARLYOOM_CHANGED}" -eq 1 ] || ! systemctl is-active earlyoom.service >/dev/null 2>&1; then
+        systemctl enable --now earlyoom.service >/dev/null 2>&1 || true
+        if [ "${EARLYOOM_CHANGED}" -eq 1 ]; then
+            systemctl restart earlyoom.service >/dev/null 2>&1 || true
+        fi
+    fi
+    if [ "${SLICE_CHANGED}" -eq 1 ]; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+    fi
+    for svc in "${DISABLED_SERVICES[@]}"; do
+        configure_service_state "disable" "${svc}"
+    done
+fi
+
+echo "ALX Tune complete. Changes applied: ${CHANGES}"
+exit 0

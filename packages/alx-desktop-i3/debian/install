@@ -1,0 +1,12 @@
+etc/skel/.config/i3/config etc/skel/.config/i3
+etc/skel/.config/i3status/config etc/skel/.config/i3status
+etc/skel/.config/dunst/dunstrc etc/skel/.config/dunst
+etc/skel/.config/rofi/config.rasi etc/skel/.config/rofi
+etc/skel/.config/gtk-3.0/settings.ini etc/skel/.config/gtk-3.0
+etc/skel/.gtkrc-2.0 etc/skel
+etc/skel/.Xresources etc/skel
+etc/lightdm/lightdm.conf.d/50-alx-i3.conf etc/lightdm/lightdm.conf.d
+etc/lightdm/lightdm-gtk-greeter.conf.d/50-alx.conf etc/lightdm/lightdm-gtk-greeter.conf.d
+usr/bin/alx-cheatsheet usr/bin
+usr/share/alx/cheatsheet.txt usr/share/alx
+usr/share/alx/wallpapers/alx-dark.svg usr/share/alx/wallpapers

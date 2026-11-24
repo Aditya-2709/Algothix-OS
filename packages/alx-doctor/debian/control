@@ -1,0 +1,18 @@
+Source: alx-doctor
+Section: admin
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-doctor
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, procps
+Description: System health and performance diagnostics for Algothix OS (ALX) Lite
+ Inspects RAM usage, ALX hardware profile, zram and swap state, earlyoom,
+ disk type and free space, I/O scheduler udev rules, per-user slice limits,
+ failed systemd units, top memory users, and heavy background services.
+ Outputs an OK/WARN/FAIL table with suggested fixes or machine-readable JSON.

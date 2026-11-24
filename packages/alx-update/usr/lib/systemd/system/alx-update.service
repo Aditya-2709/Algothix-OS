@@ -1,0 +1,10 @@
+[Unit]
+Description=Algothix OS (ALX) Lite Scheduled System Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Nice=15
+IOSchedulingClass=idle
+ExecStart=/usr/sbin/alx-update

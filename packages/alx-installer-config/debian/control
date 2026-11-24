@@ -1,0 +1,18 @@
+Source: alx-installer-config
+Section: admin
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-installer-config
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, calamares, calamares-settings-debian, alx-branding
+Description: Calamares installer configuration and AES-NI LUKS gate for ALX Lite
+ Configures Calamares for guided ext4-only installation with noatime/commit=60
+ mount options, dynamically disables LUKS encryption on CPUs without AES-NI
+ hardware acceleration, enables first-boot alx-tune on the installed system,
+ and removes live-only installer packages after installation.

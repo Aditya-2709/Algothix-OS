@@ -1,0 +1,54 @@
+.TH ALX-SETUP 1 "November 2026" "Algothix OS 0.1.0" "User Commands"
+.SH NAME
+alx-setup \- on-demand developer language profile installer for Algothix OS (ALX) Lite
+.SH SYNOPSIS
+.B alx-setup
+\fIprofile\fR [\fB\-\-dry\-run\fR] [\fB\-y\fR|\fB\-\-yes\fR]
+.br
+.B alx-setup list
+.SH DESCRIPTION
+.B alx-setup
+installs curated developer language toolchains on demand from official Debian
+repositories, printing expected disk and RAM costs prior to installation and
+warning when installing heavier toolchains on \fBalx-profile-low\fR hardware.
+.SH PROFILES
+.TP
+.B python
+python3, python3-pip, python3-venv, python3-pytest
+.TP
+.B node
+nodejs, npm
+.TP
+.B go
+golang-go
+.TP
+.B rust
+rustc, cargo, rustfmt
+.TP
+.B web
+nodejs, npm, sqlite3, curl, jq
+.TP
+.B cpp
+build-essential, clang, clangd, cmake, ninja-build, gdb, valgrind, pkg-config
+.TP
+.B java
+default-jdk-headless, maven
+.TP
+.B editor-vscodium
+Optional VSCodium installer notice with low-RAM warning.
+.SH OPTIONS
+.TP
+.B \-\-dry\-run
+Print expected disk/RAM costs and apt command without installing packages.
+.TP
+.B \-y, \-\-yes
+Proceed without interactive confirmation.
+.TP
+.B \-v, \-\-version
+Display version information.
+.TP
+.B \-h, \-\-help
+Display usage information.
+.SH SEE ALSO
+.BR alx-update (8),
+.BR alx-doctor (1)

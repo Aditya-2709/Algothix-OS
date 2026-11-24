@@ -1,0 +1,69 @@
+name: ALX Lite CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint-and-packages:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie-slim
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install lint and packaging tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            bats build-essential debhelper devscripts dpkg-dev fakeroot lintian make reprepro shellcheck
+
+      - name: Verify make help
+        run: make help
+
+      - name: Build ALX Debian packages
+        run: make packages
+
+      - name: Run shellcheck and lintian
+        run: make lint
+
+      - name: Run bats unit tests
+        run: make test-unit
+
+  iso-build-and-smoke:
+    needs: lint-and-packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker build environment
+        run: make docker-build
+
+      - name: Build ISO inside Debian trixie container
+        run: |
+          docker run --rm --privileged \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            alx-builder:trixie \
+            bash -lc "make packages && make iso"
+
+      - name: Run QEMU BIOS and UEFI smoke tests
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            alx-builder:trixie \
+            make test-qemu
+
+      - name: Upload ISO and checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: algothix-os-lite-amd64
+          path: |
+            build/algothix-os-lite-amd64.iso
+            build/SHA256SUMS

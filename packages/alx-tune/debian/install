@@ -1,0 +1,4 @@
+usr/sbin/alx-tune usr/sbin
+usr/share/man/man8/alx-tune.8 usr/share/man/man8
+usr/lib/systemd/system/alx-tune.service usr/lib/systemd/system
+usr/lib/udev/rules.d/60-alx-io-scheduler.rules usr/lib/udev/rules.d

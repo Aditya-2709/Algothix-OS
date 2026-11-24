@@ -1,0 +1,136 @@
+# Algothix OS (ALX) Lite — Default i3 Configuration (FR-2.1, FR-2.4)
+set $mod Mod4
+set $term urxvt
+
+font pango:JetBrains Mono 9
+
+# Window borders — minimal, fast, no compositor required
+default_border pixel 2
+default_floating_border pixel 2
+hide_edge_borders smart
+floating_modifier $mod
+
+# ALX Dark Palette (Slate + Cyan accent)
+# class                 border  backgr. text    indicator child_border
+client.focused          #38bdf8 #0f172a #f8fafc #38bdf8   #38bdf8
+client.focused_inactive #334155 #1e293b #cbd5e1 #334155   #334155
+client.unfocused        #1e293b #0f172a #94a3b8 #1e293b   #1e293b
+client.urgent           #ef4444 #7f1d1d #f8fafc #ef4444   #ef4444
+client.background       #0f172a
+
+# Load Xresources (urxvt font/colors)
+exec_always --no-startup-id xrdb -merge ~/.Xresources
+
+# Background wallpaper (falls back to solid slate if feh fails)
+exec_always --no-startup-id sh -c 'feh --no-fehbg --bg-fill /usr/share/alx/wallpapers/alx-dark.svg || xsetroot -solid "#0f172a"'
+
+# Notifications and NetworkManager tray applet
+exec --no-startup-id dunst
+exec --no-startup-id nm-applet
+
+# Compositor is OFF by default for 2 GB RAM / Intel GMA performance (FR-2.1).
+# Uncomment on alx-profile-mid if desired:
+# exec --no-startup-id picom -b
+
+# Core application bindings
+bindsym $mod+Return exec $term
+bindsym $mod+Shift+q kill
+bindsym $mod+d exec --no-startup-id rofi -show drun
+bindsym $mod+e exec --no-startup-id pcmanfm
+bindsym $mod+Shift+slash exec --no-startup-id alx-cheatsheet
+
+# Floating rule for keybinding cheat-sheet
+for_window [title="^ALX Keybindings$"] floating enable, resize set 760 520, move position center
+
+# Focus navigation (Vim keys + arrows)
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Move windows
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# Splits and layouts
+bindsym $mod+b split h
+bindsym $mod+v split v
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+t layout toggle split
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+
+# Workspaces 1..9
+set $ws1 "1:term"
+set $ws2 "2:code"
+set $ws3 "3:web"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
+
+# Reload / restart / exit
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Exit Algothix OS i3 session?' -B 'Exit' 'i3-msg exit'"
+
+# Resize mode
+mode "resize" {
+    bindsym h resize shrink width 5 px or 5 ppt
+    bindsym j resize grow height 5 px or 5 ppt
+    bindsym k resize shrink height 5 px or 5 ppt
+    bindsym l resize grow width 5 px or 5 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# ALX Status Bar
+bar {
+    position top
+    status_command i3status -c ~/.config/i3status/config
+    font pango:JetBrains Mono 9
+    colors {
+        background #0f172a
+        statusline #e2e8f0
+        separator  #334155
+        focused_workspace  #38bdf8 #1e293b #f8fafc
+        active_workspace   #334155 #1e293b #cbd5e1
+        inactive_workspace #0f172a #0f172a #94a3b8
+        urgent_workspace   #ef4444 #7f1d1d #f8fafc
+    }
+}

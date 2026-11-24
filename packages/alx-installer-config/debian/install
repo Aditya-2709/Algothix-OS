@@ -1,0 +1,6 @@
+usr/sbin/alx-calamares-launch usr/sbin
+usr/share/alx/calamares/settings.conf usr/share/alx/calamares
+usr/share/alx/calamares/modules/partition.conf usr/share/alx/calamares/modules
+usr/share/alx/calamares/modules/fstab.conf usr/share/alx/calamares/modules
+usr/share/alx/calamares/modules/shellprocess-alx-firstboot.conf usr/share/alx/calamares/modules
+usr/share/applications/alx-installer.desktop usr/share/applications

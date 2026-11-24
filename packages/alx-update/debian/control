@@ -1,0 +1,17 @@
+Source: alx-update
+Section: admin
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-update
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, apt, systemd
+Description: AC-power and idle-aware system updater for Algothix OS (ALX) Lite
+ Wraps apt-get update and apt-get full-upgrade with AC-power and CPU-load idle
+ checks so old laptops do not thrash on battery or during active coding
+ sessions. Includes an optional systemd timer and prints a concise summary.

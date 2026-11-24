@@ -1,0 +1,37 @@
+========================================================================
+                 ALGOTHIX OS (ALX) LITE — KEYBINDINGS
+========================================================================
+
+  WINDOWS & APPS
+    Super + Enter          Open terminal (urxvt)
+    Super + d              App launcher (rofi)
+    Super + e              File manager (pcmanfm)
+    Super + Shift + q      Close focused window
+    Super + ?              Show this keybinding cheat-sheet
+
+  NAVIGATION & LAYOUT
+    Super + h/j/k/l        Focus left / down / up / right (or Arrows)
+    Super + Shift + h/j/k/l Move focused window
+    Super + b / v          Split horizontal / vertical
+    Super + f              Toggle fullscreen
+    Super + s / w / t      Stacking / Tabbed / Toggle split
+    Super + Shift + Space  Toggle floating window
+    Super + r              Resize mode (h/j/k/l, Esc to exit)
+
+  WORKSPACES
+    Super + 1..9           Switch workspace (1:term, 2:code, 3:web)
+    Super + Shift + 1..9   Move window to workspace
+
+  SESSION
+    Super + Shift + c      Reload i3 config
+    Super + Shift + r      Restart i3 in-place
+    Super + Shift + e      Exit i3 session
+
+  TERMINAL & DEV TOOLS
+    tmux prefix: Ctrl+a    (| split vertical, - split horizontal)
+    nvim                   Minimal fast Neovim (leader: Space)
+    lazygit                Terminal Git UI
+    podman                 Rootless containers (Docker-free)
+
+  Press 'q' to close this window.
+========================================================================

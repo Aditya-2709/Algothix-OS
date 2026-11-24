@@ -1,0 +1,46 @@
+# Algothix OS (ALX) Lite — i3status bar configuration
+
+general {
+    colors = true
+    color_good = "#4ade80"
+    color_degraded = "#facc15"
+    color_bad = "#f87171"
+    interval = 5
+}
+
+order += "wireless _first_"
+order += "ethernet _first_"
+order += "memory"
+order += "load"
+order += "battery all"
+order += "tztime local"
+
+wireless _first_ {
+    format_up = "W: %essid (%quality)"
+    format_down = ""
+}
+
+ethernet _first_ {
+    format_up = "E: %ip"
+    format_down = ""
+}
+
+memory {
+    format = "RAM %used/%total"
+    threshold_degraded = "20%"
+    threshold_critical = "10%"
+}
+
+load {
+    format = "LOAD %1min"
+}
+
+battery all {
+    format = "BAT %status %percentage"
+    format_down = ""
+    low_threshold = 15
+}
+
+tztime local {
+    format = "ALX | %Y-%m-%d %H:%M"
+}

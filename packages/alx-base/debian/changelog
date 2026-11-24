@@ -4,4 +4,4 @@ alx-base (0.1.0-1) trixie; urgency=medium
   * Configure APT to disable recommended and suggested packages by default.
   * Add /etc/alx/release metadata and console banner.
 
- -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 12:00:00 +0000
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 12:00:00 +0000

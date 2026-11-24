@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Algothix OS (ALX) Lite — Cross-Device Workspace Layer (FR-5.1..FR-5.9)
+# Commands: pair, unpair, status, send, clip, run
+
+VERSION="0.1.0"
+CONF_FILE="${ALX_LINK_CONF:-/etc/alx/link.conf}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -n "${ALX_LINK_CORE:-}" ]; then
+    CORE_PY="${ALX_LINK_CORE}"
+elif [ -x /usr/lib/alx-link/alx-link-core.py ]; then
+    CORE_PY="/usr/lib/alx-link/alx-link-core.py"
+else
+    CORE_PY="${SCRIPT_DIR}/../lib/alx-link/alx-link-core.py"
+fi
+
+NETWORK_BACKEND="wireguard"
+SYNC_DIR="ALX-Sync"
+PAIR_PORT=47470
+PAIR_TIMEOUT=120
+
+if [ -r "${CONF_FILE}" ]; then
+    # shellcheck disable=SC1090
+    source "${CONF_FILE}"
+fi
+
+export NETWORK_BACKEND SYNC_DIR PAIR_PORT PAIR_TIMEOUT
+
+usage() {
+    cat <<'EOF'
+Usage: alx-link <command> [OPTIONS]
+
+Cross-device pairing and workspace sharing for Algothix OS (ALX) Lite.
+
+Commands:
+  pair --listen [--code <PIN>] [--port <P>] [--role server|client]
+      Listen for an incoming pairing request and display a 6-digit PIN.
+  pair <host> --code <PIN> [--port <P>] [--role server|client]
+      Pair with a listening ALX peer using its 6-digit PIN.
+  status [--json]
+      Show paired peers, network backend, and sync/Input Leap status.
+  send <file> [peer]
+      Transfer a file to <peer>:~/ALX-Sync/ via scp (or croc if no peer given).
+  clip <peer>
+      Push local X11 clipboard text to <peer> over SSH.
+  run <peer> -- <command...>
+      Run a command remotely on <peer> inside a tmux session over SSH.
+  unpair <peer>
+      Cleanly and idempotently remove SSH keys, config, Syncthing device,
+      and Input Leap entry for <peer>.
+
+Options:
+  -v, --version  Show version information
+  -h, --help     Show this help message
+EOF
+}
+
+if [ "$#" -eq 0 ]; then
+    usage >&2
+    exit 2
+fi
+
+case "$1" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    -v|--version)
+        printf 'alx-link %s\n' "${VERSION}"
+        exit 0
+        ;;
+    pair)
+        shift
+        if [ "$#" -eq 0 ]; then
+            echo "alx-link pair: specify '--listen' or '<host> --code <PIN>'" >&2
+            exit 2
+        fi
+        if [ "$1" = "--listen" ]; then
+            shift
+            exec python3 "${CORE_PY}" pair-listen --port "${PAIR_PORT}" --timeout "${PAIR_TIMEOUT}" "$@"
+        else
+            exec python3 "${CORE_PY}" pair-connect "$@"
+        fi
+        ;;
+    unpair)
+        shift
+        [ "$#" -eq 1 ] || { echo "Usage: alx-link unpair <peer>" >&2; exit 2; }
+        exec python3 "${CORE_PY}" unpair "$1"
+        ;;
+    status)
+        shift
+        exec python3 "${CORE_PY}" status "$@"
+        ;;
+    send)
+        shift
+        [ "$#" -ge 1 ] || { echo "Usage: alx-link send <file> [peer]" >&2; exit 2; }
+        FILE_PATH="$1"
+        PEER="${2:-}"
+        if [ ! -e "${FILE_PATH}" ]; then
+            echo "alx-link send: file not found: ${FILE_PATH}" >&2
+            exit 1
+        fi
+        if [ -n "${PEER}" ]; then
+            exec scp -r "${FILE_PATH}" "${PEER}:~/${SYNC_DIR}/"
+        elif command -v croc >/dev/null 2>&1; then
+            exec croc send "${FILE_PATH}"
+        else
+            echo "alx-link send: specify a paired <peer> (or install optional 'croc')." >&2
+            exit 2
+        fi
+        ;;
+    clip)
+        shift
+        [ "$#" -eq 1 ] || { echo "Usage: alx-link clip <peer>" >&2; exit 2; }
+        PEER="$1"
+        if ! command -v xclip >/dev/null 2>&1; then
+            echo "alx-link clip: xclip is required." >&2
+            exit 1
+        fi
+        xclip -o -selection clipboard | ssh "${PEER}" "DISPLAY=:0 xclip -i -selection clipboard"
+        echo "Clipboard pushed to ${PEER}."
+        ;;
+    run)
+        shift
+        [ "$#" -ge 3 ] || { echo "Usage: alx-link run <peer> -- <command...>" >&2; exit 2; }
+        PEER="$1"
+        shift
+        if [ "$1" != "--" ]; then
+            echo "Usage: alx-link run <peer> -- <command...>" >&2
+            exit 2
+        fi
+        shift
+        REMOTE_CMD="$*"
+        exec ssh -t "${PEER}" "tmux new-session -A -s alx-run \"${REMOTE_CMD}\""
+        ;;
+    *)
+        echo "alx-link: unknown command: $1" >&2
+        exit 2
+        ;;
+esac

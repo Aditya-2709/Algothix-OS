@@ -1,0 +1,15 @@
+Package: alx-doctor
+Version: 0.1.0-1
+Architecture: all
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Installed-Size: 23
+Depends: procps
+Section: admin
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://algothix.com
+Description: System health and performance diagnostics for Algothix OS (ALX) Lite
+ Inspects RAM usage, ALX hardware profile, zram and swap state, earlyoom,
+ disk type and free space, I/O scheduler udev rules, per-user slice limits,
+ failed systemd units, top memory users, and heavy background services.
+ Outputs an OK/WARN/FAIL table with suggested fixes or machine-readable JSON.
