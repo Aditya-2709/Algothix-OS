@@ -2,7 +2,7 @@
 set -eu
 
 # Algothix OS (ALX) Lite — First-boot terminal welcome (FR-6.3)
-VERSION="0.1.0"
+VERSION="1.1.0"
 PROFILE_FILE="${ALX_PROFILE_FILE:-/etc/alx/profile}"
 
 case "${1:-}" in
@@ -30,15 +30,15 @@ fi
 
 cat <<EOF
 ====================================================================
-  Welcome to Algothix OS (ALX) Lite 0.1
+  Welcome to Algothix OS (ALX) Lite 1.1
   Hardware profile: ${PROFILE}
 ====================================================================
 
   Quick-start commands:
     alx-setup list       Install language toolchains (python, node, go, rust, cpp...)
-    alx-link pair        Pair with another ALX machine (SSH, sync, remote builds)
+    alx-link pair        Pair with another ALX machine (Tailscale/WireGuard, SSH, Syncthing)
     alx-doctor           Check RAM, zram, disk, and service health
-    Super + ?            Open the i3 keybinding cheat-sheet
+    Super + ?            Open the Awesome WM keybinding cheat-sheet
 
   Run 'alx-welcome' anytime to see this message again.
 ====================================================================

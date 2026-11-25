@@ -1,7 +1,15 @@
+alx-branding (1.1.0-1) trixie; urgency=medium
+
+  * CHANGE-001: Add minimal GPU-free SDDM QML theme and /etc/sddm.conf.d/alx.conf.
+  * Add optimized PNG ASCII ALX wallpapers (1024x768..1920x1080).
+  * Update alx-welcome for ALX Lite 1.1 and Awesome WM.
+
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Wed, 25 Nov 2026 08:15:00 +0000
+
 alx-branding (0.1.0-1) trixie; urgency=medium
 
   * Initial release for Algothix OS (ALX) Lite Milestone M6.
   * Add original geometric SVG logo, Calamares branding.desc and QML slideshow.
-  * Add first-boot terminal welcome (/usr/bin/alx-welcome + /etc/profile.d/alx-welcome.sh).
+  * Add first-boot terminal welcome (alx-welcome).
 
  -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 13:15:00 +0000

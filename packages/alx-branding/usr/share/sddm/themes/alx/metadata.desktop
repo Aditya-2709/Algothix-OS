@@ -1,0 +1,15 @@
+[SddmGreeterTheme]
+Name=ALX
+Description=Minimal GPU-free dark SDDM theme for Algothix OS (ALX) Lite
+Author=Algothix OS Maintainers
+Copyright=(c) 2026 Algothix OS Maintainers
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1.1.0
+Website=https://algothix.com
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Theme-Id=alx
+Theme-API=2.0
+QtVersion=6

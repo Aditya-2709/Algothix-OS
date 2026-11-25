@@ -11,7 +11,8 @@ Package: alx-branding
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
-Description: Original logo, Calamares branding, slideshow, and first-boot welcome for ALX Lite
- Provides original geometric SVG logo assets, Calamares dark slate/cyan
- branding and QML slideshow, and the first-boot terminal welcome script
- pointing users to alx-setup, alx-link, and alx-doctor.
+Description: SDDM theme, PNG wallpapers, Calamares branding, and welcome for ALX Lite
+ Provides original PNG ASCII ALX wallpapers (1024x768, 1280x720, 1366x768,
+ 1920x1080), the minimal GPU-free SDDM QML theme (/usr/share/sddm/themes/alx),
+ /etc/sddm.conf.d/alx.conf, Calamares branding and slideshow, and the
+ first-boot terminal welcome script.

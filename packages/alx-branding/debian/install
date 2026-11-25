@@ -1,6 +1,15 @@
 usr/bin/alx-welcome usr/bin
 etc/profile.d/alx-welcome.sh etc/profile.d
+etc/sddm.conf.d/alx.conf etc/sddm.conf.d
 usr/share/alx/logo.svg usr/share/alx
+usr/share/alx/wallpapers/alx-1024x768.png usr/share/alx/wallpapers
+usr/share/alx/wallpapers/alx-1280x720.png usr/share/alx/wallpapers
+usr/share/alx/wallpapers/alx-1366x768.png usr/share/alx/wallpapers
+usr/share/alx/wallpapers/alx-1920x1080.png usr/share/alx/wallpapers
+usr/share/sddm/themes/alx/metadata.desktop usr/share/sddm/themes/alx
+usr/share/sddm/themes/alx/theme.conf usr/share/sddm/themes/alx
+usr/share/sddm/themes/alx/Main.qml usr/share/sddm/themes/alx
+usr/share/sddm/themes/alx/background.png usr/share/sddm/themes/alx
 usr/share/alx/calamares/branding/alx/branding.desc usr/share/alx/calamares/branding/alx
 usr/share/alx/calamares/branding/alx/logo.svg usr/share/alx/calamares/branding/alx
 usr/share/alx/calamares/branding/alx/show.qml usr/share/alx/calamares/branding/alx
