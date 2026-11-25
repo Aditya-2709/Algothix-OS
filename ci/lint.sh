@@ -15,7 +15,7 @@ mapfile -t shell_files < <(
     find auto ci config/hooks tests/qemu packages \
         -type f \( -name "*.sh" -o -name "*.chroot" -o -name "config" -o -name "build" -o -name "clean" \
             -o -path "packages/*/usr/bin/alx-*" -o -path "packages/*/usr/sbin/alx-*" \) \
-        -not -path "packages/*/etc/*" \
+        -not -path "packages/*/etc/*" -not -path "packages/*/debian/*" \
         2>/dev/null | sort
 )
 

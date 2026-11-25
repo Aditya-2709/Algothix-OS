@@ -4,4 +4,4 @@ alx-update (0.1.0-1) trixie; urgency=medium
   * Wrap apt update && apt full-upgrade with AC-power and idle load guards.
   * Add optional systemd timer/service and alx-update(8) man page.
 
- -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 12:55:00 +0000
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 12:55:00 +0000

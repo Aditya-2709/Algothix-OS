@@ -33,7 +33,7 @@ EOF
 }
 
 is_on_ac_power() {
-    local supply type online found_mains=0
+    local supply type found_mains=0
     if [ ! -d "${POWER_DIR}" ]; then
         return 0
     fi

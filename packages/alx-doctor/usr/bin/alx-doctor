@@ -177,7 +177,7 @@ if [ -d "${SYS_BLOCK}" ]; then
     done
 fi
 
-DISK_TARGET="${ROOT_DIR:-/}"
+DISK_TARGET="${ROOT_DIR:-/}"; [ -d "${DISK_TARGET}" ] || DISK_TARGET="/"
 DISK_AVAIL_MB="$(df -Pm "${DISK_TARGET}" | awk 'NR==2 { print $4 }')"
 DISK_USE_PCT="$(df -Pm "${DISK_TARGET}" | awk 'NR==2 { gsub(/%/, "", $5); print $5 }')"
 if [ "${DISK_AVAIL_MB}" -lt 512 ] || [ "${DISK_USE_PCT}" -ge 95 ]; then
@@ -190,7 +190,7 @@ fi
 
 # 6. I/O scheduler udev rule
 UDEV_RULE="${ROOT_DIR}/etc/udev/rules.d/60-alx-io-scheduler.rules"
-if [ -r "${UDEV_RULE}" ]; then
+if [ -r "${ROOT_DIR}/usr/lib/udev/rules.d/60-alx-io-scheduler.rules" ] || [ -r "${UDEV_RULE}" ]; then
     add_check "io_scheduler" "OK" "udev rule present (bfq for HDD, none for SSD)" ""
 else
     add_check "io_scheduler" "WARN" "Missing /etc/udev/rules.d/60-alx-io-scheduler.rules" "Reinstall alx-tune package"

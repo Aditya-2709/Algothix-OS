@@ -11,7 +11,7 @@ setup() {
     printf 'Filename\tType\tSize\tUsed\tPriority\n/dev/zram0\tpartition\t1048576\t0\t100\n' > "${TMP_TEST}/swaps_zram"
     printf 'Filename\tType\tSize\tUsed\tPriority\n' > "${TMP_TEST}/swaps_empty"
     mkdir -p "${TMP_TEST}/root/etc/udev/rules.d"
-    cp "${ROOT_DIR}/packages/alx-tune/etc/udev/rules.d/60-alx-io-scheduler.rules" \
+    cp "${ROOT_DIR}/packages/alx-tune/usr/lib/udev/rules.d/60-alx-io-scheduler.rules" \
         "${TMP_TEST}/root/etc/udev/rules.d/"
 }
 

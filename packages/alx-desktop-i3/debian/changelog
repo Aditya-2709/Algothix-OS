@@ -5,4 +5,4 @@ alx-desktop-i3 (0.1.0-1) trixie; urgency=medium
   * Add LightDM default session configuration for i3.
   * Add Super+? keybinding cheat-sheet and original dark SVG wallpaper.
 
- -- Algothix OS Maintainers <maintainers@algothix.local>  Mon, 23 Nov 2026 12:15:00 +0000
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 12:15:00 +0000

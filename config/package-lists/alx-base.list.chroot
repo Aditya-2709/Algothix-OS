@@ -36,3 +36,4 @@ firmware-iwlwifi
 firmware-realtek
 firmware-atheros
 firmware-misc-nonfree
+user-setup
