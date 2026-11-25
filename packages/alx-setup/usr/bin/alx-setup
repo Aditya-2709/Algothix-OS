@@ -1,22 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Algothix OS (ALX) Lite — On-Demand Developer Language Profile Installer (FR-3.6, FR-3.8)
-# Uses verified Debian 13 (trixie) packages, prints expected disk and RAM costs
-# before installing, and supports --dry-run and --yes modes.
+# Algothix OS (ALX) Lite — On-Demand Developer & Optional Tool Installer (FR-3.6, CHANGE-001)
+# Profiles: python, node, go, rust, web, cpp, java, localsend, kdeconnect, editor-vscodium
 
-VERSION="0.1.0"
+VERSION="1.1.0"
 DRY_RUN=0
 ASSUME_YES=0
 PROFILE=""
 APT_CMD="${ALX_APT_CMD:-apt-get}"
 PROFILE_FILE="${ALX_PROFILE_FILE:-/etc/alx/profile}"
 
+# Pinned official LocalSend release (verified on GitHub Releases, recorded in docs/THIRD_PARTY.md)
+LOCALSEND_VERSION="1.19.0"
+LOCALSEND_DEB="LocalSend-${LOCALSEND_VERSION}-linux-x86-64.deb"
+LOCALSEND_URL="https://github.com/localsend/localsend/releases/download/v${LOCALSEND_VERSION}/${LOCALSEND_DEB}"
+LOCALSEND_SHA256="f2cc2d1f8a2542799576e4c1cc61ed1f35c6a7dba2f375870e8500eab6fbfe66"
+
 usage() {
     cat <<'EOF'
 Usage: alx-setup <profile|list> [OPTIONS]
 
-Install on-demand developer language profiles for Algothix OS (ALX) Lite.
+Install on-demand developer language profiles and optional tools for ALX Lite.
 
 Profiles:
   python           Python 3, pip, venv, pytest
@@ -26,11 +31,13 @@ Profiles:
   web              Node.js, npm, sqlite3, curl, jq
   cpp              GCC/Clang, clangd, CMake, Ninja, GDB, Valgrind
   java             OpenJDK headless and Maven
-  editor-vscodium  Optional VSCodium setup guide (heavy RAM warning)
+  localsend        Optional LocalSend v1.19.0 (.deb, SHA-256 verified, LAN port 53317)
+  kdeconnect       Optional minimal KDE Connect (daemon + CLI, LAN-only phone sync)
+  editor-vscodium  Optional VSCodium notice (heavy RAM warning)
   list             List all profiles with expected disk and RAM cost
 
 Options:
-  --dry-run        Show cost estimate and packages without installing
+  --dry-run        Show cost estimate and actions without installing
   -y, --yes        Skip confirmation prompt
   -v, --version    Show version information
   -h, --help       Show this help message
@@ -38,7 +45,7 @@ EOF
 }
 
 list_profiles() {
-    printf '%-16s %-12s %-18s %s\n' "PROFILE" "DISK COST" "TYPICAL RAM" "PACKAGES"
+    printf '%-16s %-12s %-18s %s\n' "PROFILE" "DISK COST" "TYPICAL RAM" "PACKAGES / SOURCE"
     printf '%-16s %-12s %-18s %s\n' "----------------" "------------" "------------------" "----------------------------------------"
     printf '%-16s %-12s %-18s %s\n' "python" "~110 MB" "40-150 MB" "python3 python3-pip python3-venv python3-pytest"
     printf '%-16s %-12s %-18s %s\n' "node" "~160 MB" "80-300 MB" "nodejs npm"
@@ -47,6 +54,8 @@ list_profiles() {
     printf '%-16s %-12s %-18s %s\n' "web" "~175 MB" "80-350 MB" "nodejs npm sqlite3 curl jq"
     printf '%-16s %-12s %-18s %s\n' "cpp" "~520 MB" "150-500 MB" "build-essential clang clangd cmake ninja-build gdb valgrind pkg-config"
     printf '%-16s %-12s %-18s %s\n' "java" "~480 MB" "250-700 MB" "default-jdk-headless maven"
+    printf '%-16s %-12s %-18s %s\n' "localsend" "~85 MB" "120-250 MB" "GitHub v${LOCALSEND_VERSION} .deb (Flutter; alx-profile-mid recommended)"
+    printf '%-16s %-12s %-18s %s\n' "kdeconnect" "~140 MB" "60-140 MB" "kdeconnect (--no-install-recommends, LAN-only)"
     printf '%-16s %-12s %-18s %s\n' "editor-vscodium" "~380 MB" "400-900 MB (HIGH)" "Optional upstream VSCodium (not preinstalled)"
 }
 
@@ -55,6 +64,36 @@ current_hw_profile() {
         head -n 1 "${PROFILE_FILE}" | tr -d '[:space:]'
     else
         echo "unknown"
+    fi
+}
+
+confirm_or_exit() {
+    local label="$1"
+    if [ "${ASSUME_YES}" -eq 0 ] && [ -t 0 ]; then
+        printf 'Proceed with installing %s? [y/N] ' "${label}"
+        read -r reply
+        case "${reply}" in
+            y|Y|yes|YES) ;;
+            *)
+                echo "Aborted."
+                exit 0
+                ;;
+        esac
+    fi
+}
+
+run_apt_install() {
+    if [ "${APT_CMD}" = "apt-get" ] && [ "$(id -u)" -ne 0 ]; then
+        if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "$@"
+        else
+            echo "alx-setup: root privileges required (run with sudo)." >&2
+            exit 1
+        fi
+    else
+        "${APT_CMD}" update
+        "${APT_CMD}" install -y --no-install-recommends "$@"
     fi
 }
 
@@ -99,6 +138,55 @@ fi
 
 if [ "${PROFILE}" = "list" ]; then
     list_profiles
+    exit 0
+fi
+
+HW_PROF="$(current_hw_profile)"
+
+if [ "${PROFILE}" = "localsend" ]; then
+    echo "ALX Setup: profile=localsend (v${LOCALSEND_VERSION})"
+    echo "  Expected disk cost : ~85 MB"
+    echo "  Expected RAM usage : 120-250 MB (Flutter GUI)"
+    echo "  Release URL        : ${LOCALSEND_URL}"
+    echo "  Pinned SHA-256     : ${LOCALSEND_SHA256}"
+    if [ "${HW_PROF}" = "alx-profile-low" ]; then
+        echo "  WARNING: Current profile is alx-profile-low (2-3 GB RAM / older Intel GMA GPU)."
+        echo "           LocalSend is a Flutter app and may be sluggish under software rendering."
+        echo "           Recommended on alx-profile-mid; use 'alx-link send' for lightweight transfers."
+    fi
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        echo "[dry-run] Would download ${LOCALSEND_DEB}, verify SHA-256 ${LOCALSEND_SHA256}, install via ${APT_CMD}, and allow LAN-only ufw port 53317/tcp+udp."
+        exit 0
+    fi
+    confirm_or_exit "localsend v${LOCALSEND_VERSION}"
+    TMP_DIR="$(mktemp -d)"
+    trap 'rm -rf "${TMP_DIR}"' EXIT
+    curl -fsSL "${LOCALSEND_URL}" -o "${TMP_DIR}/${LOCALSEND_DEB}"
+    printf '%s  %s\n' "${LOCALSEND_SHA256}" "${TMP_DIR}/${LOCALSEND_DEB}" | sha256sum -c -
+    run_apt_install "${TMP_DIR}/${LOCALSEND_DEB}"
+    if command -v ufw >/dev/null 2>&1; then
+        for cidr in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16; do
+            sudo ufw allow from "${cidr}" to any port 53317 proto tcp comment "localsend lan" >/dev/null 2>&1 || true
+            sudo ufw allow from "${cidr}" to any port 53317 proto udp comment "localsend lan" >/dev/null 2>&1 || true
+        done
+    fi
+    echo "ALX Setup: LocalSend v${LOCALSEND_VERSION} installed and LAN port 53317 configured."
+    exit 0
+fi
+
+if [ "${PROFILE}" = "kdeconnect" ]; then
+    echo "ALX Setup: profile=kdeconnect (optional phone integration)"
+    echo "  Expected disk cost : ~140 MB"
+    echo "  Expected RAM usage : 60-140 MB (kdeconnectd + kdeconnect-cli)"
+    echo "  Packages           : kdeconnect (--no-install-recommends)"
+    echo "  NOTE: KDE Connect auto-discovery works on the local LAN only and NOT across Tailscale."
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        echo "[dry-run] Would run: ${APT_CMD} update && ${APT_CMD} install -y --no-install-recommends kdeconnect"
+        exit 0
+    fi
+    confirm_or_exit "kdeconnect"
+    run_apt_install kdeconnect
+    echo "ALX Setup: 'kdeconnect' installed. Use 'kdeconnect-cli -l' on your local LAN to pair your phone."
     exit 0
 fi
 
@@ -148,22 +236,18 @@ case "${PROFILE}" in
     editor-vscodium)
         DISK_EST="~380 MB"
         RAM_EST="400-900 MB (Electron)"
-        HEAVY_WARN=1
-        HW_PROF="$(current_hw_profile)"
         echo "ALX Setup: profile=editor-vscodium"
         echo "  Expected disk cost : ${DISK_EST}"
         echo "  Expected RAM usage : ${RAM_EST}"
         if [ "${HW_PROF}" = "alx-profile-low" ]; then
             echo "  WARNING: Current hardware profile is alx-profile-low (2-3 GB RAM)."
             echo "           VSCodium (Electron) may trigger heavy swapping or earlyoom."
-            echo "           Prefer neovim, micro, or geany on 2 GB systems."
         fi
         if [ "${DRY_RUN}" -eq 1 ]; then
             echo "[dry-run] Would configure VSCodium upstream apt repository and install 'codium'."
             exit 0
         fi
-        echo "VSCodium is an optional third-party package not included in Debian main."
-        echo "See /usr/share/doc/alx-setup or docs/THIRD_PARTY.md for the signed upstream repo steps."
+        echo "See docs/THIRD_PARTY.md for the signed VSCodium upstream apt repository."
         exit 0
         ;;
     *)
@@ -172,7 +256,6 @@ case "${PROFILE}" in
         ;;
 esac
 
-HW_PROF="$(current_hw_profile)"
 echo "ALX Setup: profile=${PROFILE}"
 echo "  Expected disk cost : ${DISK_EST}"
 echo "  Expected RAM usage : ${RAM_EST}"
@@ -188,30 +271,7 @@ if [ "${DRY_RUN}" -eq 1 ]; then
     exit 0
 fi
 
-if [ "${ASSUME_YES}" -eq 0 ] && [ -t 0 ]; then
-    printf 'Proceed with installing %s? [y/N] ' "${PROFILE}"
-    read -r reply
-    case "${reply}" in
-        y|Y|yes|YES) ;;
-        *)
-            echo "Aborted."
-            exit 0
-            ;;
-    esac
-fi
-
-if [ "${APT_CMD}" = "apt-get" ] && [ "$(id -u)" -ne 0 ]; then
-    if command -v sudo >/dev/null 2>&1; then
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends "${PACKAGES[@]}"
-    else
-        echo "alx-setup: root privileges required (run with sudo)." >&2
-        exit 1
-    fi
-else
-    "${APT_CMD}" update
-    "${APT_CMD}" install -y --no-install-recommends "${PACKAGES[@]}"
-fi
-
+confirm_or_exit "${PROFILE}"
+run_apt_install "${PACKAGES[@]}"
 echo "ALX Setup: '${PROFILE}' profile installed successfully."
 exit 0

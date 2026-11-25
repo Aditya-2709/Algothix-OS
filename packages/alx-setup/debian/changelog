@@ -1,9 +1,12 @@
+alx-setup (1.1.0-1) trixie; urgency=medium
+
+  * CHANGE-001: Add optional 'localsend' (v1.19.0 .deb with SHA-256 check and
+    LAN-only ufw port 53317) and 'kdeconnect' (minimal daemon/CLI, LAN-only).
+
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Wed, 25 Nov 2026 08:30:00 +0000
+
 alx-setup (0.1.0-1) trixie; urgency=medium
 
   * Initial release for Algothix OS (ALX) Lite Milestone M4.
-  * Implement on-demand language profiles (python, node, go, rust, web, cpp, java)
-    and optional editor-vscodium helper with low-profile RAM warnings.
-  * Print expected disk and RAM costs prior to install; support --dry-run.
-  * Add alx-setup(1) man page.
 
  -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 12:50:00 +0000
