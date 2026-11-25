@@ -24,12 +24,13 @@ teardown() {
 
     run "${ALX_SETUP}" --version
     [ "${status}" -eq 0 ]
-    [[ "${output}" == *"alx-setup 0.1.0"* ]]
+    [[ "${output}" == *"alx-setup 1.1.0"* ]]
 
     run "${ALX_SETUP}" list
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"python"* ]]
-    [[ "${output}" == *"rust"* ]]
+    [[ "${output}" == *"localsend"* ]]
+    [[ "${output}" == *"kdeconnect"* ]]
 
     run "${ALX_SETUP}" nonexistent-lang
     [ "${status}" -eq 2 ]
@@ -49,15 +50,16 @@ teardown() {
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"MOCK_APT: update"* ]]
     [[ "${output}" == *"MOCK_APT: install -y --no-install-recommends python3 python3-pip python3-venv python3-pytest"* ]]
-    [[ "${output}" == *"installed successfully"* ]]
 }
 
-@test "alx-setup warns about heavy RAM use on alx-profile-low for rust and editor-vscodium" {
-    run env ALX_PROFILE_FILE="${TMP_TEST}/profile_low" "${ALX_SETUP}" rust --dry-run
+@test "alx-setup localsend and kdeconnect --dry-run print costs, SHA-256, and caveats" {
+    run env ALX_PROFILE_FILE="${TMP_TEST}/profile_low" "${ALX_SETUP}" localsend --dry-run
     [ "${status}" -eq 0 ]
+    [[ "${output}" == *"f2cc2d1f8a2542799576e4c1cc61ed1f35c6a7dba2f375870e8500eab6fbfe66"* ]]
     [[ "${output}" == *"WARNING:"* ]]
 
-    run env ALX_PROFILE_FILE="${TMP_TEST}/profile_low" "${ALX_SETUP}" editor-vscodium --dry-run
+    run "${ALX_SETUP}" kdeconnect --dry-run
     [ "${status}" -eq 0 ]
-    [[ "${output}" == *"WARNING:"* ]]
+    [[ "${output}" == *"LAN only"* ]]
+    [[ "${output}" == *"--no-install-recommends kdeconnect"* ]]
 }

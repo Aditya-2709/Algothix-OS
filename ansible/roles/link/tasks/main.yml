@@ -14,8 +14,8 @@
     group: root
     mode: "0644"
     content: |
-      # Managed by Ansible (alx link role)
-      NETWORK_BACKEND="{{ alx_link_backend }}"
+      # Managed by Ansible (alx link role, CHANGE-001)
+      network={{ alx_link_backend }}
       SYNC_DIR="{{ alx_link_sync_dir }}"
       PAIR_PORT={{ alx_link_pair_port }}
       PAIR_TIMEOUT=120

@@ -4,7 +4,6 @@ set -euo pipefail
 # Algothix OS (ALX) Lite — Lightweight Cross-Device Layer (CHANGE-001)
 # Stack: Tailscale (default) or WireGuard, Taildrop or scp/rsync, Syncthing,
 #        xclip + notify-send over SSH, SSH + tmux + mosh remote runs.
-# No KDE Connect by default, no Input Leap, no croc.
 
 VERSION="1.1.0"
 CONF_FILE="${ALX_LINK_CONF:-/etc/alx/link.conf}"

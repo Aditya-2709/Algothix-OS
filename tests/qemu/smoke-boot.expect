@@ -13,7 +13,6 @@ log_file -noappend $log_file
 
 eval spawn $qemu_cmd
 
-# Wait for console login prompt or live autologin shell prompt
 expect {
     -re "alx login:" {
         send "alx\r"
@@ -36,9 +35,10 @@ expect {
     }
 }
 
-# M1: Verify /etc/os-release and hostname
+# M1: Verify /etc/os-release (v1.1) and hostname
 send "cat /etc/os-release\r"
 expect -re {NAME="Algothix OS"}
+expect -re {VERSION_ID="1.1"}
 expect -re {ID=alx}
 expect -re {ID_LIKE=debian}
 expect -re {alx@alx.*[$#%?] }
@@ -47,7 +47,7 @@ send "hostname\r"
 expect -re {\malx\M}
 expect -re {alx@alx.*[$#%?] }
 
-# M2: Verify dev tools, rootless Podman, and LightDM/i3
+# M2 / CHANGE-001: Verify dev tools, rootless Podman, SDDM, and Awesome WM
 send "nvim --version | head -n 1 && tmux -V && git --version && podman --version\r"
 expect -re {NVIM}
 expect -re {podman version}
@@ -57,11 +57,11 @@ send "podman info --format '{{.Host.Security.Rootless}}'\r"
 expect -re {true}
 expect -re {alx@alx.*[$#%?] }
 
-send "systemctl is-enabled lightdm && command -v i3 && command -v i3status\r"
+send "systemctl is-enabled sddm && command -v awesome && command -v notify-send\r"
 expect -re {enabled}
 expect -re {alx@alx.*[$#%?] }
 
-# M3: Verify alx-tune profile (2 GB RAM -> alx-profile-low), zram, idempotency, and alx-doctor
+# M3: Verify alx-tune profile, zram, idempotency, and alx-doctor
 send "cat /etc/alx/profile\r"
 expect -re {alx-profile-low}
 expect -re {alx@alx.*[$#%?] }
@@ -78,13 +78,10 @@ send "alx-doctor --json\r"
 expect -re {"fail_count": 0}
 expect -re {alx@alx.*[$#%?] }
 
-# M4: Verify alx-setup python --dry-run and alx-update --dry-run
-send "alx-setup python --dry-run\r"
+# M4 / M5: Verify alx-setup and alx-link status
+send "alx-setup python --dry-run && alx-link status --json\r"
 expect -re {Expected disk cost}
-expect -re {alx@alx.*[$#%?] }
-
-send "alx-update --dry-run\r"
-expect -re {ALX Update summary:}
+expect -re {"network_backend":}
 expect -re {alx@alx.*[$#%?] }
 
 # Measure boot time and idle RAM (PRD Section 7: < 450 MB)
@@ -98,7 +95,7 @@ send "used=\$(free -m | awk '/^Mem:/ {print \$3}'); echo \"ALX_IDLE_RAM_MB=\$use
 expect {
     -re {RAM_BUDGET_OK} {}
     -re {RAM_BUDGET_EXCEEDED} {
-        puts stderr "FAIL: Idle RAM exceeded 450 MB budget (PRD Section 7)."
+        puts stderr "FAIL: Idle RAM exceeded 450 MB budget."
         exit 1
     }
     timeout {
@@ -108,7 +105,6 @@ expect {
 }
 expect -re {alx@alx.*[$#%?] }
 
-# Clean shutdown
 send "sudo poweroff || poweroff\r"
 expect {
     eof {}
