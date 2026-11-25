@@ -1,0 +1,18 @@
+Source: alx-desktop-awesome
+Section: x11
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://algothix.com
+
+Package: alx-desktop-awesome
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, awesome, rofi, dunst, pcmanfm, rxvt-unicode, sddm, alx-branding
+Description: ALX Awesome WM desktop configuration and dark theme
+ Provides the default Awesome WM Lua configuration (5 tags, 28px top wibar
+ with /proc and sysfs widgets, PNG ASCII wallpapers via gears.wallpaper),
+ dunst, rofi, GTK dark theme, and urxvt configurations under /etc/skel, plus
+ the Super+? keybinding cheat-sheet for Algothix OS (ALX) Lite.

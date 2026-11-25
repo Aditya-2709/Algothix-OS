@@ -1,0 +1,8 @@
+alx-desktop-awesome (1.1.0-1) trixie; urgency=medium
+
+  * CHANGE-001: Replace i3/LightDM with Awesome WM and SDDM.
+  * Add plain-Lua /etc/skel/.config/awesome/rc.lua with 5 tags and 28px wibar.
+  * Switch palette to #0B0D10 background and #3DDC97 accent across all configs.
+  * Use PNG ASCII ALX wallpapers via gears.wallpaper (no SVG, no compositor).
+
+ -- Algothix OS Maintainers <maintainers@algothix.com>  Wed, 25 Nov 2026 08:20:00 +0000

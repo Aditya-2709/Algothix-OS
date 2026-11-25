@@ -1,25 +1,25 @@
 [global]
     font = Noto Sans 9
     frame_width = 1
-    frame_color = "#38bdf8"
+    frame_color = "#3DDC97"
     separator_color = frame
     padding = 8
     horizontal_padding = 10
     corner_radius = 0
     origin = top-right
-    offset = 10x32
+    offset = 10x34
     timeout = 5
 
 [urgency_low]
-    background = "#0f172a"
-    foreground = "#cbd5e1"
+    background = "#0B0D10"
+    foreground = "#8B949E"
 
 [urgency_normal]
-    background = "#0f172a"
-    foreground = "#f8fafc"
+    background = "#13171D"
+    foreground = "#E6EDF3"
 
 [urgency_critical]
-    background = "#7f1d1d"
-    foreground = "#f8fafc"
-    frame_color = "#ef4444"
+    background = "#2D1114"
+    foreground = "#E6EDF3"
+    frame_color = "#F85149"
     timeout = 0

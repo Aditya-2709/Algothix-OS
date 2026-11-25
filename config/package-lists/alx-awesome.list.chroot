@@ -1,0 +1,33 @@
+# Algothix OS (ALX) Lite — Desktop Layer: X11 SDDM + Awesome WM (CHANGE-001)
+# Verified in Debian 13 (trixie) amd64. No Wayland, no LightDM, no i3, no picom.
+
+# Minimal Xorg
+xserver-xorg-core
+xinit
+xserver-xorg-input-libinput
+x11-xserver-utils
+dbus-x11
+
+# Display Manager: SDDM (X11-only) + minimal Qt6 QML modules
+sddm
+qml6-module-qtquick
+qml6-module-qtquick-controls
+qml6-module-qtquick-layouts
+libpam-systemd
+
+# Awesome WM & Desktop Utilities
+awesome
+rofi
+dunst
+pcmanfm
+network-manager-applet
+xclip
+libnotify-bin
+rxvt-unicode
+xterm
+
+# Theme, Icons, and Fonts
+arc-theme
+papirus-icon-theme
+fonts-jetbrains-mono
+fonts-noto-core

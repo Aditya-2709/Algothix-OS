@@ -1,13 +1,13 @@
 #!/bin/sh
 set -eu
 
-VERSION="0.1.0"
+VERSION="1.1.0"
 CHEATSHEET="${ALX_CHEATSHEET_PATH:-/usr/share/alx/cheatsheet.txt}"
 
 case "${1:-}" in
     -h|--help)
         printf 'Usage: alx-cheatsheet [--help|--version|--stdout]\n'
-        printf 'Display the Algothix OS (ALX) Lite keybinding cheat-sheet.\n'
+        printf 'Display the Algothix OS (ALX) Lite Awesome WM keybinding cheat-sheet.\n'
         exit 0
         ;;
     -v|--version)

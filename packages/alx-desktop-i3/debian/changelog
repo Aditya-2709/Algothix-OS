@@ -1,8 +1,0 @@
-alx-desktop-i3 (0.1.0-1) trixie; urgency=medium
-
-  * Initial release for Algothix OS (ALX) Lite Milestone M2.
-  * Add /etc/skel configs for i3, i3status, dunst, rofi, GTK dark theme, and urxvt.
-  * Add LightDM default session configuration for i3.
-  * Add Super+? keybinding cheat-sheet and original dark SVG wallpaper.
-
- -- Algothix OS Maintainers <maintainers@algothix.com>  Mon, 23 Nov 2026 12:15:00 +0000

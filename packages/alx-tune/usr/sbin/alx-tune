@@ -343,7 +343,7 @@ fi
 
 # FR-1.3: earlyoom configuration
 EARLYOOM_CONF="# Managed by alx-tune (FR-1.3)
-EARLYOOM_ARGS=\"-r 60 -m 5 -s 10 --avoid '(^|/)(init|systemd|sshd|i3|Xorg|lightdm)\$' --prefer '(^|/)(firefox|firefox-esr|Web Content|Isolated Web Co|cc1plus|clang|rustc|node|java)\$'\""
+EARLYOOM_ARGS=\"-r 60 -m 5 -s 10 --avoid '(^|/)(init|systemd|sshd|awesome|Xorg|sddm)\$' --prefer '(^|/)(firefox|firefox-esr|Web Content|Isolated Web Co|cc1plus|clang|rustc|node|java)\$'\""
 EARLYOOM_CHANGED=0
 if write_file_idempotent "/etc/default/earlyoom" "${EARLYOOM_CONF}" 0644; then
     EARLYOOM_CHANGED=1

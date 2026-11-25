@@ -1,5 +1,5 @@
 ========================================================================
-                 ALGOTHIX OS (ALX) LITE — KEYBINDINGS
+           ALGOTHIX OS (ALX) LITE — AWESOME WM KEYBINDINGS
 ========================================================================
 
   WINDOWS & APPS
@@ -11,27 +11,25 @@
 
   NAVIGATION & LAYOUT
     Super + h/j/k/l        Focus left / down / up / right (or Arrows)
-    Super + Shift + h/j/k/l Move focused window
-    Super + b / v          Split horizontal / vertical
+    Super + Shift + h/j/k/l Swap focused window
+    Super + Space / t      Cycle tiling layouts (tile, bottom, max, float)
+    Super + Ctrl + h / l   Shrink / grow master column width
     Super + f              Toggle fullscreen
-    Super + s / w / t      Stacking / Tabbed / Toggle split
     Super + Shift + Space  Toggle floating window
-    Super + r              Resize mode (h/j/k/l, Esc to exit)
 
-  WORKSPACES
-    Super + 1..9           Switch workspace (1:term, 2:code, 3:web)
-    Super + Shift + 1..9   Move window to workspace
+  TAGS (WORKSPACES)
+    Super + 1..5           Switch tag (1:term, 2:code, 3:web, 4:ops, 5:misc)
+    Super + Shift + 1..5   Move focused window to tag
 
   SESSION
-    Super + Shift + c      Reload i3 config
-    Super + Shift + r      Restart i3 in-place
-    Super + Shift + e      Exit i3 session
+    Super + Shift + r      Reload Awesome WM
+    Super + Shift + e      Quit Awesome WM (return to SDDM)
 
-  TERMINAL & DEV TOOLS
+  TERMINAL & ALX TOOLS
     tmux prefix: Ctrl+a    (| split vertical, - split horizontal)
-    nvim                   Minimal fast Neovim (leader: Space)
-    lazygit                Terminal Git UI
-    podman                 Rootless containers (Docker-free)
+    nvim / lazygit         Minimal Neovim + Terminal Git UI
+    alx-setup list         Install language stacks, localsend, kdeconnect
+    alx-link status        Tailscale/WireGuard, SSH, Syncthing, clip, notify
 
   Press 'q' to close this window.
 ========================================================================

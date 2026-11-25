@@ -1,0 +1,33 @@
+! Algothix OS (ALX) Lite — urxvt dark developer profile (CHANGE-001 palette)
+URxvt.font: xft:JetBrains Mono:size=10
+URxvt.boldFont: xft:JetBrains Mono:bold:size=10
+URxvt.scrollBar: false
+URxvt.saveLines: 4096
+URxvt.urgentOnBell: true
+URxvt.iso14755: false
+URxvt.iso14755_52: false
+
+! ALX #0B0D10 / #3DDC97 palette
+URxvt.background: #0B0D10
+URxvt.foreground: #E6EDF3
+URxvt.cursorColor: #3DDC97
+
+! Normal colors
+URxvt.color0:  #13171D
+URxvt.color1:  #F85149
+URxvt.color2:  #3DDC97
+URxvt.color3:  #E3B341
+URxvt.color4:  #58A6FF
+URxvt.color5:  #BC8CFF
+URxvt.color6:  #39C5CF
+URxvt.color7:  #E6EDF3
+
+! Bright colors
+URxvt.color8:  #484F58
+URxvt.color9:  #FFA198
+URxvt.color10: #56E8A8
+URxvt.color11: #F2CC60
+URxvt.color12: #79C0FF
+URxvt.color13: #D2A8FF
+URxvt.color14: #56D4DD
+URxvt.color15: #FFFFFF
