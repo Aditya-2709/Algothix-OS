@@ -25,6 +25,7 @@ iso: packages ## Build bootable hybrid ISO (BIOS + UEFI) via live-build
 		echo "ERROR: 'make iso' requires root privileges for live-build (run inside Docker or with sudo)." >&2; \
 		exit 1; \
 	fi
+	./ci/fetch-tailscale-key.sh
 	mkdir -p build config/packages.chroot
 	cp -f build/debs/*.deb config/packages.chroot/
 	lb clean --purge || true
@@ -51,7 +52,8 @@ clean: ## Clean live-build state, local repo, and built artifacts
 	@if command -v lb >/dev/null 2>&1 && [ "$$(id -u)" -eq 0 ]; then \
 		lb clean --purge || true; \
 	fi
-	rm -rf build config/packages.chroot/*.deb .build binary chroot cache local \
+	rm -rf build config/packages.chroot/*.deb config/archives/tailscale.key.chroot \
+		.build binary chroot cache local \
 		live-image-* binary.* chroot.* \
 		packages/*/debian/.debhelper packages/*/debian/files \
 		packages/*/debian/*.substvars packages/*/debian/*.debhelper.log \
