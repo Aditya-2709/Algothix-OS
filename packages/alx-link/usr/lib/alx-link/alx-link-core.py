@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Algothix OS (ALX) Lite — ALX Link pairing protocol & config manager.
+"""Algothix OS (ALX) Lite — ALX Link pairing protocol & config manager (CHANGE-001).
 
 Handles:
   - Ephemeral PIN-authenticated TCP pairing handshake (HMAC-SHA256 challenge)
   - SSH key exchange & managed ~/.ssh/config.d/alx-link-<peer>.conf
-  - Syncthing config.xml device & ~/ALX-Sync folder wiring
-  - Input Leap server/client screen configuration
-  - Status reporting (human & --json) and idempotent unpair
+  - Syncthing config.xml device & ~/ALX-Sync folder wiring (enabled only after pairing)
+  - Status reporting (peers, online state, Tailscale/WireGuard, SSH, Syncthing)
+  - Idempotent unpair removing all peer artifacts
 """
 
 import argparse
@@ -23,7 +23,7 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "0.1.0"
+VERSION = "1.1.0"
 
 
 def home_dir() -> Path:
@@ -54,6 +54,10 @@ def local_user() -> str:
     return os.environ.get("ALX_LINK_USER", getpass.getuser())
 
 
+def network_backend() -> str:
+    return os.environ.get("ALX_LINK_NETWORK", "tailscale")
+
+
 def ensure_ssh_key() -> str:
     sdir = ssh_dir()
     sdir.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -79,7 +83,6 @@ def ensure_ssh_key() -> str:
                 stderr=subprocess.DEVNULL,
             )
         else:
-            # Deterministic fallback for minimal environments without ssh-keygen
             key_path.write_text("alx-link-private-key-placeholder\n", encoding="utf-8")
             os.chmod(key_path, 0o600)
             pub_path.write_text(
@@ -87,6 +90,30 @@ def ensure_ssh_key() -> str:
                 encoding="utf-8",
             )
     return pub_path.read_text(encoding="utf-8").strip()
+
+
+def get_syncthing_device_id(create_if_missing: bool = False) -> str:
+    env_id = os.environ.get("ALX_LINK_SYNCTHING_ID")
+    if env_id:
+        return env_id
+    id_cache = config_dir() / "syncthing-device-id"
+    if id_cache.exists():
+        return id_cache.read_text(encoding="utf-8").strip()
+    if shutil.which("syncthing") and not create_if_missing:
+        res = subprocess.run(
+            ["syncthing", "--device-id"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    digest = hashlib.sha256(f"{local_hostname()}:{home_dir()}".encode()).hexdigest().upper()
+    parts = [digest[i : i + 7] for i in range(0, 56, 7)]
+    dev_id = "-".join(parts)
+    config_dir().mkdir(parents=True, exist_ok=True)
+    id_cache.write_text(dev_id + "\n", encoding="utf-8")
+    return dev_id
 
 
 def syncthing_config_path() -> Path:
@@ -106,38 +133,13 @@ def syncthing_config_path() -> Path:
             "folder",
             id="alx-sync",
             label="ALX-Sync",
-            path=str(home_dir() / "ALX-Sync"),
+            path=str(home_dir() / os.environ.get("SYNC_DIR", "ALX-Sync")),
             type="sendreceive",
         )
         ET.SubElement(folder, "device", id=dev_id)
         ET.SubElement(root, "device", id=dev_id, name=local_hostname())
         ET.ElementTree(root).write(default_path, encoding="utf-8", xml_declaration=True)
     return default_path
-
-
-def get_syncthing_device_id(create_if_missing: bool = False) -> str:
-    env_id = os.environ.get("ALX_LINK_SYNCTHING_ID")
-    if env_id:
-        return env_id
-    id_cache = config_dir() / "syncthing-device-id"
-    if id_cache.exists():
-        return id_cache.read_text(encoding="utf-8").strip()
-    if shutil.which("syncthing") and not create_if_missing:
-        res = subprocess.run(
-            ["syncthing", "--device-id"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if res.returncode == 0 and res.stdout.strip():
-            return res.stdout.strip()
-    # Deterministic local synthetic ID when syncthing is not initialized yet
-    digest = hashlib.sha256(f"{local_hostname()}:{home_dir()}".encode()).hexdigest().upper()
-    parts = [digest[i : i + 7] for i in range(0, 56, 7)]
-    dev_id = "-".join(parts)
-    config_dir().mkdir(parents=True, exist_ok=True)
-    id_cache.write_text(dev_id + "\n", encoding="utf-8")
-    return dev_id
 
 
 def ensure_ssh_include() -> None:
@@ -156,13 +158,23 @@ def ensure_ssh_include() -> None:
     os.chmod(cfg, 0o600)
 
 
+def maybe_toggle_syncthing(enable: bool) -> None:
+    if os.environ.get("ALX_LINK_SKIP_SYSTEMD") == "1":
+        return
+    if not shutil.which("systemctl") or not os.path.isdir("/run/systemd/system"):
+        return
+    action = ["systemctl", "--user", "enable", "--now", "syncthing.service"] if enable else [
+        "systemctl", "--user", "disable", "--now", "syncthing.service"
+    ]
+    subprocess.run(action, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+
 def apply_peer_config(peer: dict) -> None:
     name = peer["name"]
     host = peer["address"]
     user = peer["user"]
     pubkey = peer["ssh_pubkey"].strip()
     st_id = peer["syncthing_id"].strip()
-    role = peer.get("input_leap_role", "client")
 
     # 1. Peer state JSON
     peers_dir().mkdir(parents=True, exist_ok=True)
@@ -170,7 +182,7 @@ def apply_peer_config(peer: dict) -> None:
         json.dumps(peer, indent=2) + "\n", encoding="utf-8"
     )
 
-    # 2. SSH config & authorized_keys
+    # 2. SSH config & tagged authorized_keys
     ensure_ssh_include()
     peer_ssh_cfg = ssh_config_d() / f"alx-link-{name}.conf"
     peer_ssh_cfg.write_text(
@@ -198,7 +210,7 @@ def apply_peer_config(peer: dict) -> None:
     os.chmod(auth_keys, 0o600)
 
     # 3. Syncthing shared folder ~/ALX-Sync & config.xml device registration
-    sync_dir = home_dir() / "ALX-Sync"
+    sync_dir = home_dir() / os.environ.get("SYNC_DIR", "ALX-Sync")
     sync_dir.mkdir(parents=True, exist_ok=True)
     st_cfg = syncthing_config_path()
     tree = ET.parse(st_cfg)
@@ -219,54 +231,12 @@ def apply_peer_config(peer: dict) -> None:
         ET.SubElement(folder, "device", id=st_id)
     tree.write(st_cfg, encoding="utf-8", xml_declaration=True)
 
-    # 4. Input Leap config regeneration
-    regenerate_input_leap_conf()
-
-
-def regenerate_input_leap_conf() -> None:
-    pdir = peers_dir()
-    peers = []
-    if pdir.exists():
-        for f in sorted(pdir.glob("*.json")):
-            peers.append(json.loads(f.read_text(encoding="utf-8")))
-
-    il_cfg = config_dir() / "input-leap.conf"
-    if not peers:
-        if il_cfg.exists():
-            il_cfg.unlink()
-        return
-
-    me = local_hostname()
-    lines = [
-        "# Managed by alx-link (FR-5.5)",
-        "section: screens",
-        f"\t{me}:",
-    ]
-    for p in peers:
-        lines.append(f"\t{p['name']}:")
-    lines.append("end")
-    lines.append("")
-    lines.append("section: links")
-    first_peer = peers[0]["name"]
-    lines.append(f"\t{me}:")
-    lines.append(f"\t\tright = {first_peer}")
-    for p in peers:
-        lines.append(f"\t{p['name']}:")
-        lines.append(f"\t\tleft = {me}")
-    lines.append("end")
-    lines.append("")
-    lines.append("section: options")
-    lines.append("\trelativeMouseMoves = false")
-    lines.append("\tscreenSaverSync = false")
-    lines.append("end")
-
-    config_dir().mkdir(parents=True, exist_ok=True)
-    il_cfg.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # 4. Enable Syncthing user service only after a peer is paired
+    maybe_toggle_syncthing(enable=True)
 
 
 def send_json(conn: socket.socket, obj: dict) -> None:
-    data = (json.dumps(obj) + "\n").encode("utf-8")
-    conn.sendall(data)
+    conn.sendall((json.dumps(obj) + "\n").encode("utf-8"))
 
 
 def recv_json(conn: socket.socket) -> dict:
@@ -278,27 +248,26 @@ def recv_json(conn: socket.socket) -> dict:
         buf += chunk
         if len(buf) > 65536:
             raise ValueError("Pairing payload too large.")
-    line = buf.split(b"\n", 1)[0]
-    return json.loads(line.decode("utf-8"))
+    return json.loads(buf.split(b"\n", 1)[0].decode("utf-8"))
 
 
 def compute_mac(pin: str, nonce: str) -> str:
     return hmac.new(pin.encode("utf-8"), nonce.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
-def local_payload(role: str) -> dict:
+def local_payload() -> dict:
     return {
         "name": local_hostname(),
         "user": local_user(),
         "ssh_pubkey": ensure_ssh_key(),
         "syncthing_id": get_syncthing_device_id(),
-        "input_leap_role": role,
+        "network": network_backend(),
     }
 
 
 def cmd_pair_listen(args: argparse.Namespace) -> int:
     pin = args.code or f"{secrets.randbelow(1000000):06d}"
-    print(f"ALX Link pairing listener on {args.bind}:{args.port}", flush=True)
+    print(f"ALX Link pairing listener on {args.bind}:{args.port} (network={network_backend()})", flush=True)
     print(f"One-time confirmation code: {pin}", flush=True)
     print(f"Run on the other ALX machine: alx-link pair <this-ip> --code {pin}", flush=True)
 
@@ -326,16 +295,14 @@ def cmd_pair_listen(args: argparse.Namespace) -> int:
 
             peer_info = reply["peer"]
             peer_info["address"] = args.peer_address or addr[0]
-            my_info = local_payload(role=args.role)
-            send_json(conn, {"type": "ok", "peer": my_info})
+            send_json(conn, {"type": "ok", "peer": local_payload()})
             apply_peer_config(peer_info)
             print(f"Paired successfully with '{peer_info['name']}' ({peer_info['address']}).")
             return 0
 
 
 def cmd_pair_connect(args: argparse.Namespace) -> int:
-    pin = args.code
-    if not pin:
+    if not args.code:
         print("ERROR: --code <6-digit-pin> is required to pair.", file=sys.stderr)
         return 2
 
@@ -344,13 +311,12 @@ def cmd_pair_connect(args: argparse.Namespace) -> int:
         sock.connect((args.host, args.port))
         challenge = recv_json(sock)
         nonce = challenge["nonce"]
-        my_info = local_payload(role=args.role)
         send_json(
             sock,
             {
                 "type": "response",
-                "mac": compute_mac(pin, nonce),
-                "peer": my_info,
+                "mac": compute_mac(args.code, nonce),
+                "peer": local_payload(),
             },
         )
         result = recv_json(sock)
@@ -409,13 +375,38 @@ def cmd_unpair(args: argparse.Namespace) -> int:
                         removed = True
                 tree.write(candidate, encoding="utf-8", xml_declaration=True)
 
-    regenerate_input_leap_conf()
+    remaining = list(peers_dir().glob("*.json")) if peers_dir().exists() else []
+    if not remaining:
+        maybe_toggle_syncthing(enable=False)
 
     if removed:
-        print(f"Unpaired '{name}': removed SSH config, authorized key, Syncthing device, and Input Leap entry.")
+        print(f"Unpaired '{name}': removed SSH config, authorized key, and Syncthing device.")
     else:
         print(f"Peer '{name}' is already unpaired (no changes).")
     return 0
+
+
+def check_service_health() -> dict:
+    backend = network_backend()
+    net_iface = "tailscale0" if backend == "tailscale" else "wg0"
+    net_up = Path(f"/sys/class/net/{net_iface}").exists()
+    syncthing_state = "inactive"
+    if shutil.which("systemctl") and os.path.isdir("/run/systemd/system"):
+        res = subprocess.run(
+            ["systemctl", "--user", "is-active", "syncthing.service"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if res.returncode == 0:
+            syncthing_state = "active"
+    return {
+        "network_backend": backend,
+        "network_interface": net_iface,
+        "network_up": net_up,
+        "ssh_key_ready": (ssh_dir() / "id_ed25519_alx.pub").exists(),
+        "syncthing": syncthing_state,
+    }
 
 
 def cmd_status(args: argparse.Namespace) -> int:
@@ -425,12 +416,12 @@ def cmd_status(args: argparse.Namespace) -> int:
         for f in sorted(pdir.glob("*.json")):
             peers.append(json.loads(f.read_text(encoding="utf-8")))
 
+    health = check_service_health()
     payload = {
         "version": VERSION,
         "hostname": local_hostname(),
-        "network_backend": os.environ.get("NETWORK_BACKEND", "wireguard"),
         "sync_dir": str(home_dir() / os.environ.get("SYNC_DIR", "ALX-Sync")),
-        "input_leap_configured": (config_dir() / "input-leap.conf").exists(),
+        "services": health,
         "peers": peers,
     }
 
@@ -438,19 +429,20 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(json.dumps(payload, indent=2))
         return 0
 
-    print(f"ALX Link v{VERSION} (host={payload['hostname']}, backend={payload['network_backend']})")
+    print(
+        f"ALX Link v{VERSION} (host={payload['hostname']}, "
+        f"network={health['network_backend']}[{'up' if health['network_up'] else 'down'}], "
+        f"syncthing={health['syncthing']})"
+    )
     if not peers:
-        print("No paired peers. Run 'alx-link pair --listen' or 'alx-link pair <ip> --code <pin>'.")
+        print("No paired peers. Run 'alx-link pair --listen' or 'alx-link pair <peer> --code <pin>'.")
         return 0
 
-    print(f"{'PEER':<18} {'ADDRESS':<18} {'USER':<12} {'ROLE':<10} {'SYNCTHING ID'}")
-    print(f"{'-'*18} {'-'*18} {'-'*12} {'-'*10} {'-'*20}")
+    print(f"{'PEER':<18} {'ADDRESS':<18} {'USER':<12} {'SYNCTHING ID'}")
+    print(f"{'-'*18} {'-'*18} {'-'*12} {'-'*20}")
     for p in peers:
         st_short = p.get("syncthing_id", "")[:15] + "..."
-        print(
-            f"{p['name']:<18} {p['address']:<18} {p['user']:<12} "
-            f"{p.get('input_leap_role', 'client'):<10} {st_short}"
-        )
+        print(f"{p['name']:<18} {p['address']:<18} {p['user']:<12} {st_short}")
     return 0
 
 
@@ -463,14 +455,12 @@ def main() -> int:
     p_listen.add_argument("--port", type=int, default=47470)
     p_listen.add_argument("--timeout", type=int, default=120)
     p_listen.add_argument("--code", default="")
-    p_listen.add_argument("--role", choices=["server", "client"], default="server")
     p_listen.add_argument("--peer-address", default="")
 
     p_conn = sub.add_parser("pair-connect")
     p_conn.add_argument("host")
     p_conn.add_argument("--port", type=int, default=47470)
     p_conn.add_argument("--code", required=True)
-    p_conn.add_argument("--role", choices=["server", "client"], default="client")
 
     p_unpair = sub.add_parser("unpair")
     p_unpair.add_argument("peer")

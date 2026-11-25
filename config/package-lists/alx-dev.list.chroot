@@ -41,3 +41,5 @@ firefox-esr
 # Remote shell and sync foundations (verified in Debian trixie)
 mosh
 syncthing
+rsync
+wireguard-tools

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Algothix OS (ALX) Lite — Cross-Device Workspace Layer (FR-5.1..FR-5.9)
-# Commands: pair, unpair, status, send, clip, run
+# Algothix OS (ALX) Lite — Lightweight Cross-Device Layer (CHANGE-001)
+# Stack: Tailscale (default) or WireGuard, Taildrop or scp/rsync, Syncthing,
+#        xclip + notify-send over SSH, SSH + tmux + mosh remote runs.
+# No KDE Connect by default, no Input Leap, no croc.
 
-VERSION="0.1.0"
+VERSION="1.1.0"
 CONF_FILE="${ALX_LINK_CONF:-/etc/alx/link.conf}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -16,7 +18,12 @@ else
     CORE_PY="${SCRIPT_DIR}/../lib/alx-link/alx-link-core.py"
 fi
 
-NETWORK_BACKEND="wireguard"
+SSH_CMD="${ALX_LINK_SSH_CMD:-ssh}"
+SCP_CMD="${ALX_LINK_SCP_CMD:-scp}"
+RSYNC_CMD="${ALX_LINK_RSYNC_CMD:-rsync}"
+TAILSCALE_CMD="${ALX_LINK_TAILSCALE_CMD:-tailscale}"
+
+network="tailscale"
 SYNC_DIR="ALX-Sync"
 PAIR_PORT=47470
 PAIR_TIMEOUT=120
@@ -26,35 +33,85 @@ if [ -r "${CONF_FILE}" ]; then
     source "${CONF_FILE}"
 fi
 
-export NETWORK_BACKEND SYNC_DIR PAIR_PORT PAIR_TIMEOUT
+ALX_LINK_NETWORK="${ALX_LINK_NETWORK:-${network}}"
+export ALX_LINK_NETWORK SYNC_DIR PAIR_PORT PAIR_TIMEOUT
 
 usage() {
     cat <<'EOF'
 Usage: alx-link <command> [OPTIONS]
 
-Cross-device pairing and workspace sharing for Algothix OS (ALX) Lite.
+Lightweight cross-device workspace layer for Algothix OS (ALX) Lite.
 
 Commands:
-  pair --listen [--code <PIN>] [--port <P>] [--role server|client]
-      Listen for an incoming pairing request and display a 6-digit PIN.
-  pair <host> --code <PIN> [--port <P>] [--role server|client]
-      Pair with a listening ALX peer using its 6-digit PIN.
-  status [--json]
-      Show paired peers, network backend, and sync/Input Leap status.
+  pair --listen [--code <PIN>] [--port <P>]
+      Listen for an incoming pairing request with a 6-digit PIN.
+  pair <peer> --code <PIN> [--port <P>]
+      Pair with a listening ALX peer (brings up Tailscale/WireGuard, exchanges
+      SSH keys, shares ~/ALX-Sync via Syncthing, configures scoped ufw rules).
   send <file> [peer]
-      Transfer a file to <peer>:~/ALX-Sync/ via scp (or croc if no peer given).
-  clip <peer>
-      Push local X11 clipboard text to <peer> over SSH.
+      Send file via Taildrop (on Tailscale) or rsync/scp over SSH (WireGuard).
+  clip [peer]
+      Push local X11 clipboard (xclip) to <peer> over SSH (sets DISPLAY/XAUTHORITY).
+  notify <peer> <message...>
+      Send a desktop notification (notify-send) to <peer> over SSH (sets DBUS).
   run <peer> -- <command...>
       Run a command remotely on <peer> inside a tmux session over SSH.
+  status [--json]
+      Show paired peers, online state, and Tailscale/WireGuard/SSH/Syncthing health.
   unpair <peer>
-      Cleanly and idempotently remove SSH keys, config, Syncthing device,
-      and Input Leap entry for <peer>.
+      Cleanly and idempotently remove SSH keys, config, and Syncthing device.
 
 Options:
   -v, --version  Show version information
   -h, --help     Show this help message
 EOF
+}
+
+default_peer() {
+    local pdir="${HOME}/.config/alx-link/peers"
+    if [ -d "${pdir}" ]; then
+        local first
+        first="$(find "${pdir}" -maxdepth 1 -name '*.json' 2>/dev/null | sort | head -n 1)"
+        if [ -n "${first}" ]; then
+            basename "${first}" .json
+            return 0
+        fi
+    fi
+    return 1
+}
+
+ensure_network_up() {
+    if [ "${ALX_LINK_SKIP_NET:-0}" = "1" ]; then
+        return 0
+    fi
+    if [ "${ALX_LINK_NETWORK}" = "tailscale" ]; then
+        if command -v "${TAILSCALE_CMD}" >/dev/null 2>&1; then
+            if ! "${TAILSCALE_CMD}" status >/dev/null 2>&1; then
+                echo "ALX Link: bringing up Tailscale (run 'sudo tailscale up' if auth is needed)..."
+                "${TAILSCALE_CMD}" up >/dev/null 2>&1 || true
+            fi
+        fi
+    elif [ "${ALX_LINK_NETWORK}" = "wireguard" ]; then
+        if command -v wg-quick >/dev/null 2>&1 && [ -f /etc/wireguard/wg0.conf ] && [ ! -d /sys/class/net/wg0 ]; then
+            echo "ALX Link: bringing up WireGuard interface wg0..."
+            sudo wg-quick up wg0 || true
+        fi
+    fi
+}
+
+apply_ufw_mesh_rules() {
+    if [ "${ALX_LINK_SKIP_UFW:-0}" = "1" ] || ! command -v ufw >/dev/null 2>&1; then
+        return 0
+    fi
+    if [ "$(id -u)" -ne 0 ]; then
+        return 0
+    fi
+    local iface="tailscale0"
+    [ "${ALX_LINK_NETWORK}" = "wireguard" ] && iface="wg0"
+    ufw allow in on "${iface}" to any port 22 proto tcp comment "alx-link ssh" >/dev/null 2>&1 || true
+    ufw allow in on "${iface}" to any port 22000 proto tcp comment "alx-link syncthing" >/dev/null 2>&1 || true
+    ufw allow in on "${iface}" to any port 22000 proto udp comment "alx-link syncthing" >/dev/null 2>&1 || true
+    ufw allow in on "${iface}" to any port 21027 proto udp comment "alx-link syncthing discovery" >/dev/null 2>&1 || true
 }
 
 if [ "$#" -eq 0 ]; then
@@ -74,15 +131,17 @@ case "$1" in
     pair)
         shift
         if [ "$#" -eq 0 ]; then
-            echo "alx-link pair: specify '--listen' or '<host> --code <PIN>'" >&2
+            echo "alx-link pair: specify '--listen' or '<peer> --code <PIN>'" >&2
             exit 2
         fi
+        ensure_network_up
         if [ "$1" = "--listen" ]; then
             shift
-            exec python3 "${CORE_PY}" pair-listen --port "${PAIR_PORT}" --timeout "${PAIR_TIMEOUT}" "$@"
+            python3 "${CORE_PY}" pair-listen --port "${PAIR_PORT}" --timeout "${PAIR_TIMEOUT}" "$@"
         else
-            exec python3 "${CORE_PY}" pair-connect "$@"
+            python3 "${CORE_PY}" pair-connect "$@"
         fi
+        apply_ufw_mesh_rules
         ;;
     unpair)
         shift
@@ -102,25 +161,68 @@ case "$1" in
             echo "alx-link send: file not found: ${FILE_PATH}" >&2
             exit 1
         fi
-        if [ -n "${PEER}" ]; then
-            exec scp -r "${FILE_PATH}" "${PEER}:~/${SYNC_DIR}/"
-        elif command -v croc >/dev/null 2>&1; then
-            exec croc send "${FILE_PATH}"
-        else
-            echo "alx-link send: specify a paired <peer> (or install optional 'croc')." >&2
+        if [ -z "${PEER}" ]; then
+            PEER="$(default_peer || true)"
+        fi
+        if [ -z "${PEER}" ]; then
+            echo "alx-link send: no peer specified and no paired peers found." >&2
             exit 2
+        fi
+        if [ "${ALX_LINK_NETWORK}" = "tailscale" ] && command -v "${TAILSCALE_CMD}" >/dev/null 2>&1; then
+            exec "${TAILSCALE_CMD}" file cp "${FILE_PATH}" "${PEER}:"
+        elif command -v "${RSYNC_CMD}" >/dev/null 2>&1; then
+            exec "${RSYNC_CMD}" -az --progress -e "${SSH_CMD}" "${FILE_PATH}" "${PEER}:~/${SYNC_DIR}/"
+        else
+            exec "${SCP_CMD}" -r "${FILE_PATH}" "${PEER}:~/${SYNC_DIR}/"
         fi
         ;;
     clip)
         shift
-        [ "$#" -eq 1 ] || { echo "Usage: alx-link clip <peer>" >&2; exit 2; }
-        PEER="$1"
-        if ! command -v xclip >/dev/null 2>&1; then
+        PEER="${1:-}"
+        if [ -z "${PEER}" ]; then
+            PEER="$(default_peer || true)"
+        fi
+        if [ -z "${PEER}" ]; then
+            echo "Usage: alx-link clip [peer]" >&2
+            exit 2
+        fi
+        REMOTE_CLIP_SH='
+            D="${DISPLAY:-}"
+            if [ -z "$D" ]; then
+                sock="$(ls /tmp/.X11-unix/X* 2>/dev/null | head -n 1 || true)"
+                [ -n "$sock" ] && D=":${sock##*X}" || D=":0"
+            fi
+            XA="${XAUTHORITY:-$HOME/.Xauthority}"
+            if [ ! -r "$XA" ]; then
+                cand="$(ls /run/user/"$(id -u)"/xauth_* 2>/dev/null | head -n 1 || true)"
+                [ -n "$cand" ] && XA="$cand"
+            fi
+            DISPLAY="$D" XAUTHORITY="$XA" xclip -i -selection clipboard
+        '
+        if [ -n "${ALX_LINK_CLIP_TEXT:-}" ]; then
+            printf '%s' "${ALX_LINK_CLIP_TEXT}" | "${SSH_CMD}" "${PEER}" "${REMOTE_CLIP_SH}"
+        elif command -v xclip >/dev/null 2>&1; then
+            xclip -o -selection clipboard | "${SSH_CMD}" "${PEER}" "${REMOTE_CLIP_SH}"
+        else
             echo "alx-link clip: xclip is required." >&2
             exit 1
         fi
-        xclip -o -selection clipboard | ssh "${PEER}" "DISPLAY=:0 xclip -i -selection clipboard"
         echo "Clipboard pushed to ${PEER}."
+        ;;
+    notify)
+        shift
+        [ "$#" -ge 2 ] || { echo "Usage: alx-link notify <peer> <message...>" >&2; exit 2; }
+        PEER="$1"
+        shift
+        MSG="$*"
+        REMOTE_NOTIFY_SH='
+            D="${DISPLAY:-:0}"
+            DB="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+            msg="$(cat)"
+            DISPLAY="$D" DBUS_SESSION_BUS_ADDRESS="$DB" notify-send "ALX Link" "$msg"
+        '
+        printf '%s' "${MSG}" | "${SSH_CMD}" "${PEER}" "${REMOTE_NOTIFY_SH}"
+        echo "Notification sent to ${PEER}."
         ;;
     run)
         shift
@@ -133,7 +235,7 @@ case "$1" in
         fi
         shift
         REMOTE_CMD="$*"
-        exec ssh -t "${PEER}" "tmux new-session -A -s alx-run \"${REMOTE_CMD}\""
+        exec "${SSH_CMD}" -t "${PEER}" "tmux new-session -A -s alx-run \"${REMOTE_CMD}\""
         ;;
     *)
         echo "alx-link: unknown command: $1" >&2

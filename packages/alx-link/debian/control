@@ -10,9 +10,10 @@ Homepage: https://algothix.com
 Package: alx-link
 Architecture: all
 Multi-Arch: foreign
-Depends: ${misc:Depends}, python3, openssh-client, tmux, mosh, syncthing, xclip, wireguard-tools
-Description: Cross-device pairing and workspace sharing for Algothix OS (ALX) Lite
- Pairs two or more Algothix OS machines with a one-time PIN confirmation code,
- exchanging SSH keys, configuring Syncthing (~/ALX-Sync at idle I/O priority),
- generating Input Leap keyboard/mouse sharing configs, and providing file send,
- clipboard push, remote tmux execution, status reporting, and clean unpairing.
+Depends: ${misc:Depends}, python3, openssh-client, rsync, tmux, mosh, syncthing, xclip, libnotify-bin, wireguard-tools
+Suggests: tailscale
+Description: Lightweight cross-device workspace layer for Algothix OS (ALX) Lite
+ Pairs Algothix OS machines using a one-time PIN confirmation code over
+ Tailscale (default) or WireGuard, configuring SSH keys, Syncthing (~/ALX-Sync
+ at idle I/O priority, enabled only after pairing), Taildrop or scp/rsync file
+ send, xclip clipboard push, notify-send alerts, and remote tmux builds.

@@ -1,42 +1,47 @@
-.TH ALX-LINK 1 "November 2026" "Algothix OS 0.1.0" "User Commands"
+.TH ALX-LINK 1 "November 2026" "Algothix OS 1.1.0" "User Commands"
 .SH NAME
-alx-link \- cross-device pairing and workspace sharing for Algothix OS (ALX) Lite
+alx-link \- lightweight cross-device workspace layer for Algothix OS (ALX) Lite
 .SH SYNOPSIS
 .B alx-link pair
 \fB\-\-listen\fR [\fB\-\-code\fR \fIPIN\fR]
 .br
 .B alx-link pair
-\fIhost\fR \fB\-\-code\fR \fIPIN\fR
-.br
-.B alx-link status
-[\fB\-\-json\fR]
+\fIpeer\fR \fB\-\-code\fR \fIPIN\fR
 .br
 .B alx-link send
 \fIfile\fR [\fIpeer\fR]
 .br
 .B alx-link clip
-\fIpeer\fR
+[\fIpeer\fR]
+.br
+.B alx-link notify
+\fIpeer\fR \fImessage...\fR
 .br
 .B alx-link run
 \fIpeer\fR \fB\-\-\fR \fIcommand...\fR
+.br
+.B alx-link status
+[\fB\-\-json\fR]
 .br
 .B alx-link unpair
 \fIpeer\fR
 .SH DESCRIPTION
 .B alx-link
-pairs Algothix OS machines over LAN/WireGuard/Tailscale using a one-time 6-digit
-HMAC-SHA256 confirmation code, exchanging SSH keys, configuring Syncthing
-(\fI~/ALX-Sync\fR at idle I/O priority), and generating Input Leap keyboard/mouse
-sharing layouts.
+pairs Algothix OS machines over Tailscale (default) or WireGuard using an
+HMAC-SHA256 6-digit PIN handshake, exchanging ed25519 SSH keys and configuring
+Syncthing (\fI~/ALX-Sync\fR at \fBNice=10\fR / \fBIOSchedulingClass=idle\fR,
+enabled only after pairing). File transfers use Taildrop (\fBtailscale file cp\fR)
+on Tailscale or \fBrsync\fR/\fBscp\fR over SSH on WireGuard. Clipboard push
+(\fBclip\fR) and notifications (\fBnotify\fR) run over SSH with remote X11 and
+D-Bus environment resolution.
 .SH FILES
 .I /etc/alx/link.conf
 .br
 .I ~/.config/alx-link/peers/*.json
 .br
-.I ~/.config/alx-link/input-leap.conf
-.br
 .I ~/.ssh/config.d/alx-link-*.conf
 .SH SEE ALSO
 .BR ssh (1),
 .BR tmux (1),
-.BR syncthing (1)
+.BR syncthing (1),
+.BR notify-send (1)
