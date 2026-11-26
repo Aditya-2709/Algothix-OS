@@ -1,0 +1,14 @@
+Package: alx-setup
+Version: 0.1.0-1
+Architecture: all
+Maintainer: Algothix OS Maintainers <maintainers@algothix.com>
+Installed-Size: 19
+Depends: apt, curl, ca-certificates
+Section: devel
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://algothix.com
+Description: On-demand developer language profile installer for Algothix OS (ALX) Lite
+ Installs curated programming language toolchains (python, node, go, rust, web,
+ cpp, java) on demand using verified Debian packages, displaying expected disk
+ and RAM costs before installation and supporting --dry-run mode.

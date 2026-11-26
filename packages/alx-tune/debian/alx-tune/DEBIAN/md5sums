@@ -1,0 +1,6 @@
+d6178fa9823510d2c2f7fede6475ead9  usr/lib/systemd/system/alx-tune.service
+4c00a05a5e7625074e93d2ad267ec95c  usr/lib/udev/rules.d/60-alx-io-scheduler.rules
+63b093dca139f9aa44798b923fb7bed7  usr/sbin/alx-tune
+b7523ef0296d46c77ec51a74ff6c56bd  usr/share/doc/alx-tune/changelog.Debian.gz
+5ec3526e0a9376e2c88ec9607eef4b2f  usr/share/doc/alx-tune/copyright
+97072a618e8d01f3922057a27820f279  usr/share/man/man8/alx-tune.8.gz

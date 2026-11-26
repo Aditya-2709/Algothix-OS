@@ -1,0 +1,6 @@
+8720a5792d5e6d9ce8400ec3a66d6988  usr/lib/systemd/system/alx-update.service
+50e984dd37579382231f494d51064efb  usr/lib/systemd/system/alx-update.timer
+f303b4b9c8e57e52ee99fe43ae2e21d0  usr/sbin/alx-update
+1fa910b8c507b2154ee70cda61868c2b  usr/share/doc/alx-update/changelog.Debian.gz
+396f0b208f62b80113232e4e91c3ca7d  usr/share/doc/alx-update/copyright
+c2d18214cc2a2cf26f8e2e7ac0f6a7f5  usr/share/man/man8/alx-update.8.gz

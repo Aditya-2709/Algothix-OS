@@ -1,0 +1,8 @@
+c3b3cfda7b54644af087a5f933649369  usr/sbin/alx-calamares-launch
+0a24ccf2597e0de3fadce93154d02f17  usr/share/alx/calamares/modules/fstab.conf
+5750419d3083d97ee22264e907da2adb  usr/share/alx/calamares/modules/partition.conf
+ea0acc84fb0753cad736aec603fc635b  usr/share/alx/calamares/modules/shellprocess-alx-firstboot.conf
+c40f97f8723066f29790a24e50c6869b  usr/share/alx/calamares/settings.conf
+8d700c5afc8148266134e6ddea5279dc  usr/share/applications/alx-installer.desktop
+a3e4ace4a1729b9a0ea2996941621128  usr/share/doc/alx-installer-config/changelog.Debian.gz
+8994cb32e1bce1cbf0c4411aa6079e99  usr/share/doc/alx-installer-config/copyright
