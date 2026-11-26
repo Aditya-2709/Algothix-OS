@@ -1,5 +1,5 @@
 -- Algothix OS (ALX) Lite — Awesome WM Configuration (CHANGE-001)
--- Plain Lua using Awesome 4.3 built-ins only (no vicious, lain, or extra libs).
+-- Plain Lua using Awesome 4.3 built-ins only (no extra libraries).
 -- Compositor is OFF by default for 2-4 GB RAM / Intel GMA performance.
 
 local gears = require("gears")
