@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+mkdir -p /usr/share/keyrings
+curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg \
+  > /usr/share/keyrings/tailscale-archive-keyring.gpg
+curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list \
+  > /etc/apt/sources.list.d/tailscale.list
+chmod 0644 /usr/share/keyrings/tailscale-archive-keyring.gpg /etc/apt/sources.list.d/tailscale.list
+apt-get update -qq
+apt-get install -y --no-install-recommends tailscale
