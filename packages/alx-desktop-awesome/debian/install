@@ -2,7 +2,13 @@ etc/skel/.config/awesome/rc.lua etc/skel/.config/awesome
 etc/skel/.config/dunst/dunstrc etc/skel/.config/dunst
 etc/skel/.config/rofi/config.rasi etc/skel/.config/rofi
 etc/skel/.config/gtk-3.0/settings.ini etc/skel/.config/gtk-3.0
+etc/skel/.config/pcmanfm/default/desktop-items-0.conf etc/skel/.config/pcmanfm/default
 etc/skel/.gtkrc-2.0 etc/skel
 etc/skel/.Xresources etc/skel
+etc/skel/Desktop/alx-install.desktop etc/skel/Desktop
+etc/skel/Desktop/alx-terminal.desktop etc/skel/Desktop
+etc/skel/Desktop/alx-brave.desktop etc/skel/Desktop
+etc/skel/Desktop/alx-vscode.desktop etc/skel/Desktop
+etc/skel/Desktop/alx-files.desktop etc/skel/Desktop
 usr/bin/alx-cheatsheet usr/bin
 usr/share/alx/cheatsheet.txt usr/share/alx

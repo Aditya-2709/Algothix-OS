@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Terminal
+Comment=Open urxvt terminal
+Exec=urxvt
+Icon=utilities-terminal
+Terminal=false
+Categories=System;TerminalEmulator;

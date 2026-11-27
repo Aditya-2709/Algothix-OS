@@ -2,10 +2,13 @@ usr/bin/alx-welcome usr/bin
 etc/profile.d/alx-welcome.sh etc/profile.d
 etc/sddm.conf.d/alx.conf etc/sddm.conf.d
 usr/share/alx/logo.svg usr/share/alx
-usr/share/alx/wallpapers/alx-1024x768.png usr/share/alx/wallpapers
-usr/share/alx/wallpapers/alx-1280x720.png usr/share/alx/wallpapers
-usr/share/alx/wallpapers/alx-1366x768.png usr/share/alx/wallpapers
-usr/share/alx/wallpapers/alx-1920x1080.png usr/share/alx/wallpapers
+usr/share/alx/theme/tokens.env usr/share/alx/theme
+usr/share/backgrounds/alx/alx-1024x768.png usr/share/backgrounds/alx
+usr/share/backgrounds/alx/alx-1280x720.png usr/share/backgrounds/alx
+usr/share/backgrounds/alx/alx-1366x768.png usr/share/backgrounds/alx
+usr/share/backgrounds/alx/alx-1920x1080.png usr/share/backgrounds/alx
+usr/share/backgrounds/alx/alx-ascii-1366x768.png usr/share/backgrounds/alx
+usr/share/backgrounds/alx/alx-light-1366x768.png usr/share/backgrounds/alx
 usr/share/sddm/themes/alx/metadata.desktop usr/share/sddm/themes/alx
 usr/share/sddm/themes/alx/theme.conf usr/share/sddm/themes/alx
 usr/share/sddm/themes/alx/Main.qml usr/share/sddm/themes/alx

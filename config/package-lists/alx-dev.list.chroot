@@ -36,7 +36,6 @@ slirp4netns
 fuse-overlayfs
 
 # Browser (FR-3.7)
-firefox-esr
 
 # Remote shell and sync foundations (verified in Debian trixie)
 mosh

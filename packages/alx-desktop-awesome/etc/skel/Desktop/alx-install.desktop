@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Install ALX
+Comment=Install Algothix OS (ALX) Lite to disk
+Exec=/usr/sbin/alx-calamares-launch
+Icon=/usr/share/alx/logo.svg
+Terminal=false
+Categories=System;
