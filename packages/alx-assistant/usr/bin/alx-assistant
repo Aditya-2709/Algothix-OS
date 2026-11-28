@@ -18,7 +18,7 @@ print_source() {
     else
         cat <<'EOF'
 ALX Assistant (AGPL-3.0)
-Fork Repository: https://github.com/Aditya-2709/alx-assistant
+Fork Repository: https://github.com/Aditya-2709/Algothix-OS
 Upstream Repo:   https://github.com/EricTechPro/jarvis (pinned commit af7465f)
 Modified by Algothix OS (2026-11-28)
 EOF
@@ -163,6 +163,6 @@ if [ -x "${BIN_PATH}" ]; then
     "${BIN_PATH}"
 else
     echo "ALX Assistant binary (${BIN_PATH}) is not bundled in this scaffold build." >&2
-    echo "Build the compiled Tauri binary from https://github.com/Aditya-2709/alx-assistant via release-packages.yml." >&2
+    echo "Build the compiled Tauri binary from https://github.com/Aditya-2709/Algothix-OS via release-packages.yml." >&2
     exit 1
 fi

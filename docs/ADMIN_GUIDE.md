@@ -60,7 +60,7 @@ ALX_GPG_KEY_ID=<key-id> ./ci/release-sign.sh build/algothix-os-lite-amd64.iso bu
 ## 7. Optional ALX Assistant — Licensing, Policy & Fleet Disablement
 
 - **Testing Channel Only:** `alx-assistant` is published exclusively to the ALX APT `testing` channel via `.github/workflows/release-packages.yml` and is never included in ISO builds.
-- **AGPL-3.0 Source Offer:** Every installed `.deb` includes `/usr/share/doc/alx-assistant/SOURCE`, `debian/copyright`, and `alx-assistant --source` pointing to `https://github.com/Aditya-2709/alx-assistant` (forked from `EricTechPro/jarvis` commit `af7465f`). *Disclaimer: This documentation is not legal advice; maintainers must review AGPL-3.0 compliance (including upstream's proprietary `@anthropic-ai/claude-agent-sdk` dependency) before promoting `alx-assistant` to `stable`.*
+- **AGPL-3.0 Source Offer:** Every installed `.deb` includes `/usr/share/doc/alx-assistant/SOURCE`, `debian/copyright`, and `alx-assistant --source` pointing to `https://github.com/Aditya-2709/Algothix-OS` (forked from `EricTechPro/jarvis` commit `af7465f`). *Disclaimer: This documentation is not legal advice; maintainers must review AGPL-3.0 compliance (including upstream's proprietary `@anthropic-ai/claude-agent-sdk` dependency) before promoting `alx-assistant` to `stable`.*
 - **API Key Policy:** Never bake API keys into images, `/etc/skel`, or Ansible playbooks. Each user supplies their own key via `alx-assistant --setup` (stored per-user in GNOME Keyring / `0600` files).
 - **Disabling Fleet-Wide:** Keep the `testing` APT suite disabled in `/etc/apt/sources.list.d/` or pin `alx-assistant` to priority `-1` via `/etc/apt/preferences.d/no-alx-assistant`:
   ```

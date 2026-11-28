@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: alx-assistant
 Upstream-Contact: Algothix OS Maintainers <maintainers@algothix.org>
-Source: https://github.com/Aditya-2709/alx-assistant
+Source: https://github.com/Aditya-2709/Algothix-OS
 Comment:
  Modified by Algothix OS (2026-11-28) from upstream EricTechPro/jarvis
  (https://github.com/EricTechPro/jarvis, pinned commit af7465f, tag v0.2.12),
@@ -9,7 +9,7 @@ Comment:
  .
  Corresponding Source Offer (AGPL-3.0):
  Full corresponding source code is published at:
-   https://github.com/Aditya-2709/alx-assistant
+   https://github.com/Aditya-2709/Algothix-OS
  (upstream base commit: af7465f at https://github.com/EricTechPro/jarvis).
  Run `alx-assistant --source` or inspect /usr/share/doc/alx-assistant/SOURCE.
  .

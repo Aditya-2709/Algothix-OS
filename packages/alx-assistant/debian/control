@@ -5,7 +5,7 @@ Maintainer: Algothix OS Maintainers <maintainers@algothix.org>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
-Homepage: https://github.com/Aditya-2709/alx-assistant
+Homepage: https://github.com/Aditya-2709/Algothix-OS
 
 Package: alx-assistant
 Architecture: amd64
