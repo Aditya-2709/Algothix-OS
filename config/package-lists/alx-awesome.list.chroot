@@ -1,4 +1,4 @@
-# Algothix OS (ALX) Lite — Desktop Layer: X11 SDDM + Awesome WM (CHANGE-001)
+# Algothix OS (ALX) Lite — Desktop Layer: X11 SDDM + Awesome WM + Essential Apps (v1.3)
 # Verified in Debian 13 (trixie) amd64. No Wayland, no LightDM, no i3, no picom.
 
 # Minimal Xorg
@@ -25,6 +25,20 @@ xclip
 libnotify-bin
 rxvt-unicode
 xterm
+
+# Essential Everyday OS Apps (lightweight, verified in Debian trixie)
+pipewire-audio
+pavucontrol
+volumeicon-alsa
+gpicview
+xarchiver
+unzip
+zip
+galculator
+mousepad
+xfce4-screenshooter
+arandr
+lxappearance
 
 # Theme, Icons, and Fonts
 arc-theme

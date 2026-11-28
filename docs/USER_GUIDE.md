@@ -57,3 +57,20 @@ After pairing:
 - `alx-doctor` (or `alx-doctor --json`) — Check profile, RAM, zram, `earlyoom`, disk, failed units, and top memory users.
 - `sudo alx-tune --enable bluetooth` — Re-enable a disabled service (`bluetooth`, `cups`, `modem`, `avahi`).
 - `sudo alx-update` — Updates packages when on AC power and idle.
+
+## 6. Optional Cloud AI Assistant (`alx-assistant`)
+
+ALX Assistant is **not preinstalled** and is recommended only on `alx-profile-mid` (4 GB+ RAM). It requires an internet connection and **your own cloud API key** (Gemini free tier, Claude, or ChatGPT). Local LLMs are not supported on ALX Lite hardware.
+
+- **Install / Remove:**
+  ```bash
+  alx-setup assistant --dry-run
+  sudo alx-setup assistant
+  sudo alx-setup assistant --remove   # Purges package; keeps ~/.config/alx-assistant
+  ```
+- **First-run setup & key storage:** Run `alx-assistant --setup` to choose your provider, paste your API key (stored in GNOME Keyring via `secret-tool` when running, plus mode-`0600` config files), and optionally set a notes folder.
+- **Hotkeys (configurable in `~/.config/alx-assistant/hotkeys.env`):**
+  - `Super + i` — Launch / talk to ALX Assistant
+  - `Super + Shift + i` — Text-prompt mode
+  - `Super + Shift + Esc` — **Panic stop** (kills assistant/sidecar immediately)
+- **Safety & Privacy:** Defaults are `allowActions=false`, `skipAllow=false`, `rawReadOnly=true`, and `telemetry=false`. No network requests are sent before you configure an API key. When you send a prompt, your prompt text (and any screen capture or notes you explicitly include) is sent to your chosen cloud provider (Gemini/Claude/OpenAI), and optional voice mode downloads the Parakeet ONNX model from Hugging Face. If `allowActions` is enabled, the top wibar displays a red **`AI: ACT!`** indicator.

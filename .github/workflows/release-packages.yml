@@ -1,0 +1,75 @@
+name: Release Optional Packages (Testing Channel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      assistant_ref:
+        description: "Pinned alx-assistant fork commit SHA or tag"
+        required: true
+        default: "main"
+
+permissions:
+  contents: write
+
+jobs:
+  build-alx-assistant:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+    steps:
+      - name: Checkout Algothix OS repository
+        uses: actions/checkout@v4
+
+      - name: Install Debian trixie build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl git xz-utils debhelper dpkg-dev lintian reprepro \
+            build-essential pkg-config rustc cargo \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libasound2-dev \
+            libssl-dev librsvg2-dev patchelf
+
+      - name: Download and SHA-256 verify official Node.js v24.22.2 runtime
+        run: |
+          NODE_VER="v24.22.2"
+          NODE_TAR="node-${NODE_VER}-linux-x64.tar.xz"
+          mkdir -p /tmp/node-dist
+          cd /tmp/node-dist
+          curl -fsSLO "https://nodejs.org/dist/${NODE_VER}/${NODE_TAR}"
+          curl -fsSLO "https://nodejs.org/dist/${NODE_VER}/SHASUMS256.txt"
+          grep "  ${NODE_TAR}$" SHASUMS256.txt | sha256sum -c -
+          tar -xJf "${NODE_TAR}"
+          echo "/tmp/node-dist/node-${NODE_VER}-linux-x64/bin" >> "${GITHUB_PATH}"
+
+      - name: Checkout pinned alx-assistant fork and compile Tauri + sidecar
+        run: |
+          git clone https://github.com/Aditya-2709/alx-assistant.git /tmp/alx-assistant
+          cd /tmp/alx-assistant
+          git checkout "${{ inputs.assistant_ref }}"
+          cd showcase/tauri/sidecar
+          npm ci
+          npm test
+          cd ..
+          ./build.sh
+          mkdir -p /tmp/alx-assistant-dist
+          cp -f src-tauri/target/release/jarvis /tmp/alx-assistant-dist/alx-assistant-bin || \
+            cp -f src-tauri/target/release/alx-assistant /tmp/alx-assistant-dist/alx-assistant-bin
+          cp -a sidecar/dist /tmp/alx-assistant-dist/sidecar
+          cp -f /tmp/node-dist/node-v24.22.2-linux-x64/bin/node /tmp/alx-assistant-dist/alx-assistant-node
+
+      - name: Build alx-assistant .deb and publish to testing channel only
+        env:
+          ALX_BUILD_OPTIONAL_ASSISTANT: "1"
+          ALX_ASSISTANT_DIST_DIR: "/tmp/alx-assistant-dist"
+        run: |
+          ./ci/build-packages.sh
+          lintian --fail-on error build/optional-debs/alx-assistant_*.deb
+
+      - name: Upload testing-channel .deb and reprepro repo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alx-assistant-testing-amd64
+          path: |
+            build/optional-debs/alx-assistant_*.deb
+            build/repo/dists/testing/
+            build/repo/pool/main/a/alx-assistant/

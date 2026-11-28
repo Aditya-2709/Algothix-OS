@@ -41,3 +41,12 @@ Run this checklist on physical reference hardware before signing off a v1.1 rele
   - [ ] `alx-link unpair <peer>` cleanly removes peer config, keys, and Syncthing device.
 - [ ] **Optional LocalSend check:** Test `alx-setup localsend` on ASUS (`alx-profile-mid`) and verify software-rendering usability on Vostro (`alx-profile-low`).
 - [ ] **1-Hour Coding Session (Vostro 1015):** `nvim` + `tmux` + Git + 5-tab Firefox ESR without freeze or OOM crash.
+
+### 5. Optional ALX Assistant Verification (ASUS X541NA Recommended; Caution on Vostro 1015)
+- [ ] **Non-inclusion check:** Confirm `dpkg -l alx-assistant` is NOT installed on a fresh ISO boot.
+- [ ] **Install via `alx-setup assistant`:** Confirm warning prints on `alx-profile-low` (Vostro 1015) and zero inbound `ufw` ports are opened (`sudo ufw status`).
+- [ ] **No-network-before-key check:** Run `ss -tunp` before entering an API key; confirm 0 outbound assistant connections.
+- [ ] **First-run setup & real API key:** Run `alx-assistant --setup`, enter your personal Gemini/Claude/ChatGPT key, verify `0600` permissions on `~/.config/alx-assistant/settings.json` and `~/.gg/auth.json`.
+- [ ] **Desktop integration:** Verify `Super+i`, `Super+Shift+i`, `Super+Shift+Esc` (panic stop), and the top wibar `AI: off / listen / ACT!` badge.
+- [ ] **Real hardware voice & GPU check (unverified in QEMU):** Test ALSA microphone capture/playback and WebKitGTK rendering on Intel GMA (Vostro 1015) and Celeron N3350 (ASUS X541NA).
+- [ ] **Clean removal:** Run `sudo alx-setup assistant --remove` and verify package removal preserves `~/.config/alx-assistant`.

@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # Algothix OS (ALX) Lite — On-Demand Developer & Optional Tool Installer (FR-3.6, CHANGE-001)
-# Profiles: python, node, go, rust, web, cpp, java, localsend, kdeconnect, editor-vscodium
+# Profiles: python, node, go, rust, web, cpp, java, localsend, kdeconnect, assistant, editor-vscodium
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 DRY_RUN=0
+REMOVE_MODE=0
 ASSUME_YES=0
 PROFILE=""
 APT_CMD="${ALX_APT_CMD:-apt-get}"
@@ -21,7 +22,7 @@ usage() {
     cat <<'EOF'
 Usage: alx-setup <profile|list> [OPTIONS]
 
-Install on-demand developer language profiles and optional tools for ALX Lite.
+Install or remove on-demand developer language profiles and optional tools for ALX Lite.
 
 Profiles:
   python           Python 3, pip, venv, pytest
@@ -33,11 +34,13 @@ Profiles:
   java             OpenJDK headless and Maven
   localsend        Optional LocalSend v1.19.0 (.deb, SHA-256 verified, LAN port 53317)
   kdeconnect       Optional minimal KDE Connect (daemon + CLI, LAN-only phone sync)
+  assistant        Optional ALX Assistant (cloud AI, needs internet + own API key; alx-profile-mid)
   editor-vscodium  Optional VSCodium notice (heavy RAM warning)
   list             List all profiles with expected disk and RAM cost
 
 Options:
-  --dry-run        Show cost estimate and actions without installing
+  --dry-run        Show cost estimate and actions without installing/removing
+  --remove         Remove an installed optional profile (preserves user data)
   -y, --yes        Skip confirmation prompt
   -v, --version    Show version information
   -h, --help       Show this help message
@@ -56,7 +59,10 @@ list_profiles() {
     printf '%-16s %-12s %-18s %s\n' "java" "~480 MB" "250-700 MB" "default-jdk-headless maven"
     printf '%-16s %-12s %-18s %s\n' "localsend" "~85 MB" "120-250 MB" "GitHub v${LOCALSEND_VERSION} .deb (Flutter; alx-profile-mid recommended)"
     printf '%-16s %-12s %-18s %s\n' "kdeconnect" "~140 MB" "60-140 MB" "kdeconnect (--no-install-recommends, LAN-only)"
+    printf '%-16s %-12s %-18s %s\n' "assistant" "~220 MB*" "220-550 MB*" "alx-assistant (ALX testing repo; internet + own API key; alx-profile-mid)"
     printf '%-16s %-12s %-18s %s\n' "editor-vscodium" "~380 MB" "400-900 MB (HIGH)" "Optional upstream VSCodium (not preinstalled)"
+    echo ""
+    echo "* Measured QEMU numbers are recorded in docs/ASSISTANT-EVALUATION.md."
 }
 
 current_hw_profile() {
@@ -67,10 +73,19 @@ current_hw_profile() {
     fi
 }
 
+total_ram_mb() {
+    if [ -r /proc/meminfo ]; then
+        awk '/^MemTotal:/ { printf "%d", int($2 / 1024) }' /proc/meminfo
+    else
+        echo "0"
+    fi
+}
+
 confirm_or_exit() {
-    local label="$1"
+    local action="$1"
+    local label="$2"
     if [ "${ASSUME_YES}" -eq 0 ] && [ -t 0 ]; then
-        printf 'Proceed with installing %s? [y/N] ' "${label}"
+        printf 'Proceed with %s %s? [y/N] ' "${action}" "${label}"
         read -r reply
         case "${reply}" in
             y|Y|yes|YES) ;;
@@ -97,6 +112,21 @@ run_apt_install() {
     fi
 }
 
+run_apt_remove() {
+    if [ "${APT_CMD}" = "apt-get" ] && [ "$(id -u)" -ne 0 ]; then
+        if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get purge -y "$@"
+            sudo apt-get autoremove -y
+        else
+            echo "alx-setup: root privileges required (run with sudo)." >&2
+            exit 1
+        fi
+    else
+        "${APT_CMD}" purge -y "$@"
+        "${APT_CMD}" autoremove -y
+    fi
+}
+
 while [ "$#" -gt 0 ]; do
     case "$1" in
         -h|--help)
@@ -109,6 +139,10 @@ while [ "$#" -gt 0 ]; do
             ;;
         --dry-run)
             DRY_RUN=1
+            shift
+            ;;
+        --remove)
+            REMOVE_MODE=1
             shift
             ;;
         -y|--yes)
@@ -142,6 +176,45 @@ if [ "${PROFILE}" = "list" ]; then
 fi
 
 HW_PROF="$(current_hw_profile)"
+RAM_MB="$(total_ram_mb)"
+
+if [ "${PROFILE}" = "assistant" ]; then
+    echo "ALX Setup: profile=assistant (ALX Assistant — optional testing channel)"
+    echo "  Expected disk cost : ~180-260 MB (+~600 MB if optional voice ONNX model is downloaded)"
+    echo "  Expected RAM usage : ~220-550 MB while running (idle delta ~0 MB when closed)"
+    echo "  Network & API key  : REQUIRES internet + your own cloud API key (Gemini, Claude, or ChatGPT)."
+    echo "                       Local LLMs are not supported. No inbound firewall ports are opened."
+    echo "  License            : AGPL-3.0 (fork of EricTechPro/jarvis @ af7465f; run 'alx-assistant --source')"
+
+    if [ "${REMOVE_MODE}" -eq 1 ]; then
+        if [ "${DRY_RUN}" -eq 1 ]; then
+            echo "[dry-run] Would run: ${APT_CMD} purge -y alx-assistant && ${APT_CMD} autoremove -y (user data in ~/.config/alx-assistant preserved)."
+            exit 0
+        fi
+        confirm_or_exit "removing" "alx-assistant"
+        run_apt_remove alx-assistant
+        echo "ALX Setup: 'alx-assistant' removed. User settings/notes in ~/.config/alx-assistant were preserved."
+        exit 0
+    fi
+
+    if [ "${HW_PROF}" = "alx-profile-low" ] || { [ "${RAM_MB}" -gt 0 ] && [ "${RAM_MB}" -lt 3072 ]; }; then
+        echo "  WARNING: Current system is '${HW_PROF}' (${RAM_MB} MB RAM)."
+        echo "           ALX Assistant (WebKitGTK + Node.js) is NOT recommended on alx-profile-low or under 3 GB RAM."
+        echo "           Consider using alx-profile-mid (4 GB+ RAM) or a lightweight terminal workflow."
+    fi
+
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        echo "[dry-run] Would run: ${APT_CMD} update && ${APT_CMD} install -y --no-install-recommends alx-assistant"
+        echo "[dry-run] Firewall: outbound only (no inbound ufw ports opened)."
+        exit 0
+    fi
+
+    confirm_or_exit "installing" "alx-assistant"
+    run_apt_install alx-assistant
+    echo "ALX Setup: 'alx-assistant' installed (outbound network only; no inbound ports opened)."
+    echo "Run 'alx-assistant --setup' to configure your cloud API key and safety settings."
+    exit 0
+fi
 
 if [ "${PROFILE}" = "localsend" ]; then
     echo "ALX Setup: profile=localsend (v${LOCALSEND_VERSION})"
@@ -158,7 +231,7 @@ if [ "${PROFILE}" = "localsend" ]; then
         echo "[dry-run] Would download ${LOCALSEND_DEB}, verify SHA-256 ${LOCALSEND_SHA256}, install via ${APT_CMD}, and allow LAN-only ufw port 53317/tcp+udp."
         exit 0
     fi
-    confirm_or_exit "localsend v${LOCALSEND_VERSION}"
+    confirm_or_exit "installing" "localsend v${LOCALSEND_VERSION}"
     TMP_DIR="$(mktemp -d)"
     trap 'rm -rf "${TMP_DIR}"' EXIT
     curl -fsSL "${LOCALSEND_URL}" -o "${TMP_DIR}/${LOCALSEND_DEB}"
@@ -184,7 +257,7 @@ if [ "${PROFILE}" = "kdeconnect" ]; then
         echo "[dry-run] Would run: ${APT_CMD} update && ${APT_CMD} install -y --no-install-recommends kdeconnect"
         exit 0
     fi
-    confirm_or_exit "kdeconnect"
+    confirm_or_exit "installing" "kdeconnect"
     run_apt_install kdeconnect
     echo "ALX Setup: 'kdeconnect' installed. Use 'kdeconnect-cli -l' on your local LAN to pair your phone."
     exit 0
@@ -271,7 +344,7 @@ if [ "${DRY_RUN}" -eq 1 ]; then
     exit 0
 fi
 
-confirm_or_exit "${PROFILE}"
+confirm_or_exit "installing" "${PROFILE}"
 run_apt_install "${PACKAGES[@]}"
 echo "ALX Setup: '${PROFILE}' profile installed successfully."
 exit 0

@@ -483,6 +483,51 @@ awful.screen.connect_for_each_screen(function(s)
         buttons = tasklist_buttons,
     })
 
+-- Optional ALX Assistant status widget (shown only if alx-assistant is installed; 5s poll)
+local assistant_widget = wibox.widget.textbox("")
+local function read_assistant_hotkeys()
+    local cfg = { talk = "i", type_key = "i", panic = "Escape" }
+    local home = os.getenv("HOME") or ""
+    local f = io.open(home .. "/.config/alx-assistant/hotkeys.env", "r")
+    if not f then return cfg end
+    for line in f:lines() do
+        local k, v = line:match('^([A-Z0-9_]+)="?([^"#%s]+)"?')
+        if k == "ALX_ASSISTANT_TALK_KEY" and v then cfg.talk = v end
+        if k == "ALX_ASSISTANT_TYPE_KEY" and v then cfg.type_key = v end
+        if k == "ALX_ASSISTANT_PANIC_KEY" and v then cfg.panic = v end
+    end
+    f:close()
+    return cfg
+end
+local assistant_keys = read_assistant_hotkeys()
+
+local function update_assistant_widget()
+    if not gears.filesystem.file_readable("/usr/bin/alx-assistant") then
+        assistant_widget:set_markup("")
+        return
+    end
+    local runtime = os.getenv("XDG_RUNTIME_DIR") or "/tmp"
+    local uid_f = io.open("/proc/self/loginuid", "r")
+    local uid = uid_f and uid_f:read("*l") or nil
+    if uid_f then uid_f:close() end
+    if not uid or uid == "4294967295" then uid = "1000" end
+    local state = "off"
+    local sf = io.open(runtime .. "/alx-assistant-" .. uid .. ".state", "r")
+    if sf then
+        state = (sf:read("*l") or "off"):gsub("%s+", "")
+        sf:close()
+    end
+    if state == "actions" then
+        assistant_widget:set_markup(" <span foreground='#F26B6B'><b>AI: ACT!</b></span> |")
+    elseif state == "listening" then
+        assistant_widget:set_markup(" <span foreground='#3DDC97'>AI: listen</span> |")
+    else
+        assistant_widget:set_markup(" <span foreground='#8A94A3'>AI: off</span> |")
+    end
+end
+update_assistant_widget()
+gears.timer({ timeout = 5, autostart = true, callback = update_assistant_widget })
+
     -- 28px top bar
     s.mywibox = awful.wibar({
         position = "top",
@@ -515,6 +560,7 @@ awful.screen.connect_for_each_screen(function(s)
             sep,
             link_widget,
             sep,
+            assistant_widget,
             clock_widget,
             wibox.widget.textbox(" "),
             wibox.widget.systray(),
@@ -579,6 +625,9 @@ local globalkeys = gears.table.join(
     awful.key({ modkey }, "a", toggle_start_menu, { description = "toggle ALX Start Menu", group = "launcher" }),
     awful.key({ modkey }, "e", function() awful.spawn("pcmanfm") end, { description = "file manager", group = "launcher" }),
     awful.key({ modkey, "Shift" }, "slash", function() awful.spawn("alx-cheatsheet") end, { description = "keybinding cheat-sheet", group = "launcher" }),
+    awful.key({ modkey }, assistant_keys.talk, function() awful.spawn("alx-assistant") end, { description = "launch ALX Assistant (talk)", group = "assistant" }),
+    awful.key({ modkey, "Shift" }, assistant_keys.type_key, function() awful.spawn("alx-assistant --type") end, { description = "launch ALX Assistant (type)", group = "assistant" }),
+    awful.key({ modkey, "Shift" }, assistant_keys.panic, function() awful.spawn("alx-assistant --panic-stop") end, { description = "ALX Assistant panic stop", group = "assistant" }),
 
     awful.key({ modkey }, "h", function() awful.client.focus.bydirection("left") end, { description = "focus left", group = "client" }),
     awful.key({ modkey }, "j", function() awful.client.focus.bydirection("down") end, { description = "focus down", group = "client" }),

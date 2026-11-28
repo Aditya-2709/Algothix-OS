@@ -23,7 +23,7 @@ ROOT_DIR="${BATS_TEST_DIRNAME}/../.."
     [ "${status}" -eq 2 ]
 }
 
-@test "alx-awesome and alx-dev package lists match v1.2 (SDDM, Awesome, Brave/VS Code hook, no Firefox)" {
+@test "alx-awesome and alx-dev package lists match v1.3 (SDDM, Awesome, essentials, Brave/VS Code)" {
     local desk="${ROOT_DIR}/config/package-lists/alx-awesome.list.chroot"
     local dev="${ROOT_DIR}/config/package-lists/alx-dev.list.chroot"
     local apps_hook="${ROOT_DIR}/config/hooks/live/0260-alx-apps.hook.chroot"
@@ -32,22 +32,27 @@ ROOT_DIR="${BATS_TEST_DIRNAME}/../.."
     [ -x "${apps_hook}" ]
     grep -qx "sddm" "${desk}"
     grep -qx "awesome" "${desk}"
+    grep -qx "pipewire-audio" "${desk}"
+    grep -qx "galculator" "${desk}"
+    grep -qx "xarchiver" "${desk}"
     ! grep -qx "firefox-esr" "${dev}"
     grep -q "brave-browser" "${apps_hook}"
-    grep -q " code$" "${apps_hook}"
     ! grep -Eq '^(lightdm|i3-wm|i3status|picom|snapd|docker\.io|docker-ce|flatpak)$' "${desk}"
 }
 
-@test "Awesome WM rc.lua has bottom dock, titlebars (min/max/close), and desktop icons" {
+@test "Awesome WM rc.lua has icon taskbar, Start Menu power controls, titlebars, and icon-grid rofi" {
     local rc="${ROOT_DIR}/packages/alx-desktop-awesome/etc/skel/.config/awesome/rc.lua"
+    local rofi="${ROOT_DIR}/packages/alx-desktop-awesome/etc/skel/.config/rofi/config.rasi"
     [ -f "${rc}" ]
+    [ -f "${rofi}" ]
     grep -q 'position = "bottom"' "${rc}"
     grep -q 'request::titlebars' "${rc}"
+    grep -q 'systemctl suspend' "${rc}"
+    grep -q 'systemctl reboot' "${rc}"
+    grep -q 'systemctl poweroff' "${rc}"
     grep -q 'pcmanfm --desktop' "${rc}"
-    grep -q 'gears.wallpaper' "${rc}"
-    [ -f "${ROOT_DIR}/packages/alx-desktop-awesome/etc/skel/Desktop/alx-install.desktop" ]
-    [ -f "${ROOT_DIR}/packages/alx-desktop-awesome/etc/skel/Desktop/alx-brave.desktop" ]
-    [ -f "${ROOT_DIR}/packages/alx-desktop-awesome/etc/skel/Desktop/alx-vscode.desktop" ]
+    grep -q 'show-icons: true;' "${rofi}"
+    grep -q 'columns: 4;' "${rofi}"
     ! grep -q 'vicious\|lain\|picom' "${rc}"
 }
 

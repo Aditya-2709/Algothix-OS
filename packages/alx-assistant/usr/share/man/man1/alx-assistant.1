@@ -1,0 +1,51 @@
+.TH ALX-ASSISTANT 1 "November 2026" "Algothix OS (ALX) Lite" "User Commands"
+.SH NAME
+alx-assistant \- optional cloud-API AI desktop assistant for Algothix OS (ALX) Lite
+.SH SYNOPSIS
+.B alx-assistant
+[\fB\-\-setup\fR | \fB\-\-source\fR | \fB\-\-status\fR | \fB\-\-panic\-stop\fR | \fB\-\-type\fR | \fB\-\-help\fR]
+.SH DESCRIPTION
+.B alx-assistant
+launches the optional ALX Assistant desktop application on X11 (Awesome WM).
+It requires an internet connection and the user's own cloud model API key
+(Gemini, Claude, or ChatGPT). No network requests are made until a key is
+configured.
+.PP
+Safe defaults are enforced on initialization:
+.BR allowActions=false ,
+.BR skipAllow=false ,
+.BR rawReadOnly=true ,
+and
+.BR telemetry=false .
+.SH OPTIONS
+.TP
+.B \-\-setup
+Run the first-run terminal setup wizard (\fBalx-assistant-setup\fR) to choose a
+provider, store your API key securely, and set an optional notes folder.
+.TP
+.B \-\-source
+Print the AGPL-3.0 corresponding source repository URL and pinned upstream
+commit SHA.
+.TP
+.B \-\-status
+Print current assistant state (\fBoff\fR, \fBlistening\fR, or \fBactions\fR).
+.TP
+.B \-\-panic\-stop
+Immediately terminate any running ALX Assistant and sidecar processes and reset
+state to \fBoff\fR.
+.TP
+.B \-\-type
+Launch or focus ALX Assistant in text prompt mode.
+.SH FILES
+.TP
+.I ~/.config/alx-assistant/settings.json
+User configuration (mode 0600).
+.TP
+.I ~/.config/alx-assistant/hotkeys.env
+Configurable Awesome WM hotkey bindings.
+.TP
+.I /usr/share/doc/alx-assistant/SOURCE
+AGPL-3.0 corresponding source offer and commit pin.
+.SH LICENSE
+GNU Affero General Public License v3.0 (AGPL-3.0). Modified by Algothix OS
+(2026-11-28) from EricTechPro/jarvis (commit af7465f).

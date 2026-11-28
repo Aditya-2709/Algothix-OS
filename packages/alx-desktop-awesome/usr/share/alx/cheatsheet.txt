@@ -4,10 +4,17 @@
 
   WINDOWS & APPS
     Super + Enter          Open terminal (urxvt)
-    Super + d              App launcher (rofi)
+    Super + d              App launcher (rofi icon grid)
+    Super + a              Toggle ALX Start Menu (apps & power)
     Super + e              File manager (pcmanfm)
     Super + Shift + q      Close focused window
     Super + ?              Show this keybinding cheat-sheet
+
+  ALX ASSISTANT (OPTIONAL — install via 'alx-setup assistant')
+    Super + i              Launch / talk to ALX Assistant
+    Super + Shift + i      ALX Assistant text-prompt mode
+    Super + Shift + Esc    PANIC STOP (kills assistant immediately)
+    Config hotkeys:        ~/.config/alx-assistant/hotkeys.env
 
   NAVIGATION & LAYOUT
     Super + h/j/k/l        Focus left / down / up / right (or Arrows)
@@ -28,7 +35,7 @@
   TERMINAL & ALX TOOLS
     tmux prefix: Ctrl+a    (| split vertical, - split horizontal)
     nvim / lazygit         Minimal Neovim + Terminal Git UI
-    alx-setup list         Install language stacks, localsend, kdeconnect
+    alx-setup list         Install language stacks, localsend, kdeconnect, assistant
     alx-link status        Tailscale/WireGuard, SSH, Syncthing, clip, notify
 
   Press 'q' to close this window.

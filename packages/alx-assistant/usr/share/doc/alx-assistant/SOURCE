@@ -1,0 +1,15 @@
+ALX Assistant — AGPL-3.0 Corresponding Source Offer
+===================================================
+
+Package:          alx-assistant (0.2.12+alx1)
+License:          GNU Affero General Public License v3.0 (AGPL-3.0)
+Fork Repository:  https://github.com/Aditya-2709/alx-assistant
+Upstream Repo:    https://github.com/EricTechPro/jarvis
+Upstream Commit:  af7465f (tag Jarvis v0.2.12)
+Modified By:      Algothix OS (ALX) Lite Maintainers (2026-11-28)
+
+Full corresponding source code, build scripts, and packaging metadata are
+available at the fork repository above and in the Algothix OS repository:
+  https://github.com/Aditya-2709/Algothix-OS
+
+Notice: This file documents source provenance and is not legal advice.

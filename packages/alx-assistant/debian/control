@@ -1,0 +1,30 @@
+Source: alx-assistant
+Section: utils
+Priority: optional
+Maintainer: Algothix OS Maintainers <maintainers@algothix.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/Aditya-2709/alx-assistant
+
+Package: alx-assistant
+Architecture: amd64
+Depends: ${misc:Depends},
+         bash,
+         curl,
+         gnome-keyring,
+         libasound2t64,
+         libgtk-3-0t64,
+         libsecret-tools,
+         libwebkit2gtk-4.1-0,
+         xdg-utils,
+         xdotool
+Description: Optional cloud-API AI desktop assistant for Algothix OS (ALX) Lite
+ ALX Assistant is an optional Tauri + Node.js desktop assistant packaged for
+ Algothix OS (ALX) Lite (Debian 13 trixie, X11/Awesome WM). It requires an
+ internet connection and the user's own cloud AI API key (Gemini, Claude, or
+ ChatGPT). Local LLMs are not supported on ALX Lite target hardware.
+ .
+ Modified from EricTechPro/jarvis (pinned commit af7465f, AGPL-3.0) with
+ original ALX artwork, automatic updater removed, telemetry disabled, and safe
+ defaults (allowActions=false, skipAllow=false, rawReadOnly=true).

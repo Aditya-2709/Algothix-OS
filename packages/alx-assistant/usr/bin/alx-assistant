@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ALX Assistant launcher wrapper (AGPL-3.0)
+# Enforces safe defaults, 0600 permissions, no-network-before-key, state file, and panic stop.
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/alx-assistant"
+SETTINGS_FILE="${CONFIG_DIR}/settings.json"
+AUTH_FILE="${CONFIG_DIR}/auth.json"
+GG_AUTH_FILE="${HOME}/.gg/auth.json"
+STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/alx-assistant-${UID}.state"
+SOURCE_DOC="/usr/share/doc/alx-assistant/SOURCE"
+BIN_PATH="/usr/lib/alx-assistant/alx-assistant-bin"
+
+print_source() {
+    if [ -r "${SOURCE_DOC}" ]; then
+        cat "${SOURCE_DOC}"
+    else
+        cat <<'EOF'
+ALX Assistant (AGPL-3.0)
+Fork Repository: https://github.com/Aditya-2709/alx-assistant
+Upstream Repo:   https://github.com/EricTechPro/jarvis (pinned commit af7465f)
+Modified by Algothix OS (2026-11-28)
+EOF
+    fi
+}
+
+usage() {
+    cat <<'EOF'
+Usage: alx-assistant [OPTION]
+
+Options:
+  --setup       Run first-run provider & API key setup wizard
+  --source      Print AGPL-3.0 corresponding source URL and pinned commit
+  --status      Print current assistant state (off|listening|actions)
+  --panic-stop  Immediately kill assistant/sidecar processes and reset state
+  --type        Launch in text-input mode
+  -h, --help    Show this help message
+EOF
+}
+
+ensure_safe_defaults() {
+    umask 077
+    mkdir -p "${CONFIG_DIR}"
+    chmod 700 "${CONFIG_DIR}"
+    if [ ! -f "${SETTINGS_FILE}" ]; then
+        cat > "${SETTINGS_FILE}" <<'EOF'
+{
+  "product": "ALX Assistant",
+  "allowActions": false,
+  "skipAllow": false,
+  "rawReadOnly": true,
+  "telemetry": false,
+  "autoUpdate": false,
+  "provider": "",
+  "notesDir": ""
+}
+EOF
+        chmod 600 "${SETTINGS_FILE}"
+    else
+        chmod 600 "${SETTINGS_FILE}"
+    fi
+}
+
+has_configured_key() {
+    if command -v secret-tool >/dev/null 2>&1; then
+        if [ -n "$(secret-tool lookup service alx-assistant key api_key 2>/dev/null || true)" ]; then
+            return 0
+        fi
+    fi
+    if [ -s "${AUTH_FILE}" ] || [ -s "${GG_AUTH_FILE}" ]; then
+        return 0
+    fi
+    return 1
+}
+
+panic_stop() {
+    pkill -TERM -f "alx-assistant-bin" 2>/dev/null || true
+    pkill -TERM -f "jarvis-node" 2>/dev/null || true
+    pkill -TERM -f "jarvis-voice" 2>/dev/null || true
+    sleep 0.2
+    pkill -KILL -f "alx-assistant-bin" 2>/dev/null || true
+    printf 'off\n' > "${STATE_FILE}"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -u critical "ALX Assistant" "Panic stop triggered — assistant stopped." 2>/dev/null || true
+    fi
+    echo "ALX Assistant stopped."
+}
+
+read_status() {
+    if [ -r "${STATE_FILE}" ]; then
+        cat "${STATE_FILE}"
+    else
+        echo "off"
+    fi
+}
+
+MODE="launch"
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --source)
+            print_source
+            exit 0
+            ;;
+        --setup)
+            exec alx-assistant-setup
+            ;;
+        --status)
+            read_status
+            exit 0
+            ;;
+        --panic-stop)
+            panic_stop
+            exit 0
+            ;;
+        --type)
+            MODE="type"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "alx-assistant: unknown option: $1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+done
+
+ensure_safe_defaults
+
+if ! has_configured_key; then
+    if [ -t 0 ]; then
+        alx-assistant-setup
+    elif command -v urxvt >/dev/null 2>&1; then
+        exec urxvt -title "ALX Assistant Setup" -e alx-assistant-setup
+    else
+        echo "ALX Assistant: No API key configured. Run 'alx-assistant --setup' first." >&2
+        exit 1
+    fi
+fi
+
+# Start gnome-keyring-daemon if not already running under Awesome WM
+if command -v gnome-keyring-daemon >/dev/null 2>&1 && ! pgrep -u "${UID}" -x gnome-keyring-d >/dev/null 2>&1; then
+    eval "$(gnome-keyring-daemon --start --components=secrets 2>/dev/null || true)"
+    export GNOME_KEYRING_CONTROL SSH_AUTH_SOCK || true
+fi
+
+if grep -q '"allowActions"[[:space:]]*:[[:space:]]*true' "${SETTINGS_FILE}" 2>/dev/null; then
+    printf 'actions\n' > "${STATE_FILE}"
+else
+    printf 'listening\n' > "${STATE_FILE}"
+fi
+
+trap 'printf "off\n" > "${STATE_FILE}"' EXIT INT TERM
+
+if [ -x "${BIN_PATH}" ]; then
+    export JARVIS_SESSION="x11"
+    export ALX_ASSISTANT_MODE="${MODE}"
+    export ALX_ASSISTANT_CONFIG="${SETTINGS_FILE}"
+    "${BIN_PATH}"
+else
+    echo "ALX Assistant binary (${BIN_PATH}) is not bundled in this scaffold build." >&2
+    echo "Build the compiled Tauri binary from https://github.com/Aditya-2709/alx-assistant via release-packages.yml." >&2
+    exit 1
+fi

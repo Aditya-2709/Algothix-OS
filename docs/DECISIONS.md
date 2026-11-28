@@ -51,7 +51,6 @@ This file records architectural choices, defaults chosen from the PRD, and any d
 ## DEC-011: Window Manager — Awesome WM replacing i3, PNG ASCII wallpapers
 - **Change:** CHANGE-001
 - **Decision:** Rename `alx-desktop-i3` to `alx-desktop-awesome`, replace `i3-wm`/`i3status`/`picom`/`feh` with `awesome` (plain Lua `rc.lua` using built-ins only, 5 tags, 28px top wibar with `/proc` and `/sys` widgets polling ≥ 2s, no compositor by default), and replace the SVG wallpaper with 4 optimized PNG ASCII `"ALX"` wallpapers (`1024x768`, `1280x720`, `1366x768`, `1920x1080`) set via `gears.wallpaper`.
-- **Note on `docs/DESIGN.md`:** `docs/DESIGN.md` was not present in the workspace during CHANGE-001; exact design tokens stated in CHANGE-001 (`#0B0D10`, `#3DDC97`, `320px` card, `28px` wibar, `JetBrains Mono`, 4 PNG resolutions) were implemented verbatim.
 
 ## DEC-012: ALX Link Rewrite & Rejected Alternatives (Input Leap, croc, KDE Connect default)
 - **Change:** CHANGE-001
@@ -64,3 +63,10 @@ This file records architectural choices, defaults chosen from the PRD, and any d
 ## DEC-013: Optional LocalSend (`v1.19.0`) and KDE Connect (`alx-setup`)
 - **Change:** CHANGE-001
 - **Decision:** Provide `alx-setup localsend` (pinned GitHub release `v1.19.0` `.deb` with SHA-256 verification and LAN-only UFW port `53317/tcp+udp`) and `alx-setup kdeconnect` (`--no-install-recommends`, LAN-only phone sync). LocalSend is a Flutter app and is warned/discouraged on `alx-profile-low` (Intel GMA / 2–3 GB RAM).
+
+## DEC-014: Optional ALX Assistant (`testing` Channel Only) & Rejected Alternatives
+- **Decision:** Package `alx-assistant` (forked from `EricTechPro/jarvis` @ `af7465f`, AGPL-3.0) strictly as an optional on-demand package installed via `alx-setup assistant` from the ALX APT `testing` channel only, recommended for `alx-profile-mid` (4 GB+ RAM), using cloud APIs with the user's own key.
+- **Rejected Alternatives:**
+  - **Preinstalling on ALX Lite ISO:** Violates the 450 MB idle RAM / 1.5–2.0 GB ISO budgets and pulls WebKitGTK + bundled Node.js v24 (~180–260 MB disk, 220–550 MB active RAM) onto 2 GB laptops that cannot comfortably run it.
+  - **Local LLMs (Ollama / llama.cpp):** Unusable on Core 2 / Celeron N3350 with 2–4 GB RAM and no discrete GPU; would immediately exhaust RAM and trigger `earlyoom`.
+  - **Wayland build:** ALX Lite is X11-only (`SDDM` + `Awesome WM` without a compositor); Wayland portals and compositors are out of scope.

@@ -1,0 +1,8 @@
+alx-assistant (0.2.12+alx1) trixie; urgency=medium
+
+  * Initial optional ALX Assistant package for the ALX APT testing channel.
+  * Forked from EricTechPro/jarvis pinned at commit af7465f (AGPL-3.0).
+  * Replaced upstream artwork with original ALX SVG icon.
+  * Disabled auto-updater and telemetry; enforced safe defaults and 0600 storage.
+
+ -- Algothix OS Maintainers <maintainers@algothix.org>  Sat, 28 Nov 2026 16:00:00 +0530

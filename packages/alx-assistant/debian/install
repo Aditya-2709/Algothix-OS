@@ -1,0 +1,6 @@
+usr/bin/alx-assistant usr/bin
+usr/bin/alx-assistant-setup usr/bin
+usr/share/applications/alx-assistant.desktop usr/share/applications
+usr/share/icons/hicolor/scalable/apps/alx-assistant.svg usr/share/icons/hicolor/scalable/apps
+usr/share/man/man1/alx-assistant.1 usr/share/man/man1
+usr/share/doc/alx-assistant/SOURCE usr/share/doc/alx-assistant

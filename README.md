@@ -14,6 +14,8 @@ A fast, lightweight, Debian 13 (`trixie`) Linux distribution for programming and
 - [Admin Guide](docs/ADMIN_GUIDE.md) — Multi-user isolation, optional SSSD, Ansible fleet roles, `reprepro` repo, security baseline
 - [Change Log (CHANGE-001)](docs/CHANGE-001.md) — SDDM, Awesome WM, and ALX Link rewrite plan
 - [Engineering Decisions](docs/DECISIONS.md) — Recorded PRD defaults, trade-offs, and rejected alternatives
+- [ALX Assistant Evaluation](docs/ASSISTANT-EVALUATION.md) — Upstream `EricTechPro/jarvis` audit, Debian `trixie`/X11 readiness, and QEMU benchmarks
+- [ALX Agent CLI Design](docs/ASSISTANT-CLI-DESIGN.md) — Lightweight 15–35 MB terminal agent design for `alx-profile-low`
 - [Third-Party Packages](docs/THIRD_PARTY.md) — Tailscale apt repo and pinned LocalSend v1.19.0 SHA-256
 - [Physical Hardware Test Checklist](tests/hardware/HARDWARE_TEST.md) — Dell Vostro 1015 & ASUS X541NA validation
 

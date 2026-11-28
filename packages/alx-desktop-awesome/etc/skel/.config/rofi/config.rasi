@@ -1,27 +1,76 @@
 configuration {
     modi: "drun,run,window";
-    font: "JetBrains Mono 10";
-    show-icons: false;
+    font: "Noto Sans 10";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: "All Apps";
+    drun-display-format: "{name}";
     terminal: "urxvt";
 }
 
 * {
-    bg: #0B0D10;
-    bg-alt: #13171D;
-    fg: #E6EDF3;
+    bg: #12161B;
+    bg-alt: #1A1F26;
+    fg: #E6EAF0;
+    muted: #8A94A3;
+    border-col: #262C35;
     accent: #3DDC97;
-    background-color: @bg;
+    accent-dim: #1E4D3A;
+    background-color: transparent;
     text-color: @fg;
 }
 
 window {
+    width: 680px;
+    background-color: @bg;
     border: 1px;
-    border-color: @accent;
-    padding: 8px;
-    width: 40%;
+    border-color: @border-col;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+inputbar {
+    background-color: @bg-alt;
+    border: 1px;
+    border-color: @border-col;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0 0 14px 0;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    text-color: @accent;
+    margin: 0 10px 0 0;
+}
+
+listview {
+    columns: 4;
+    lines: 4;
+    spacing: 10px;
+    fixed-height: true;
+}
+
+element {
+    orientation: vertical;
+    padding: 12px 8px;
+    border-radius: 8px;
+    background-color: @bg-alt;
 }
 
 element selected {
-    background-color: @bg-alt;
-    text-color: @accent;
+    background-color: @accent-dim;
+    border: 1px;
+    border-color: @accent;
+}
+
+element-icon {
+    size: 42px;
+    horizontal-align: 0.5;
+    margin: 0 0 6px 0;
+}
+
+element-text {
+    horizontal-align: 0.5;
+    text-color: @fg;
 }

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ALX Assistant
+GenericName=Cloud AI Assistant
+Comment=Optional cloud-API AI assistant for Algothix OS (requires internet and your own API key)
+Exec=alx-assistant
+Icon=alx-assistant
+Terminal=false
+Categories=Utility;Development;
+Keywords=ai;assistant;alx;gemini;claude;chatgpt;
+StartupNotify=true

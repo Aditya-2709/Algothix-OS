@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="ALX Assistant">
+  <!-- Original Algothix OS (ALX) Lite icon — DESIGN.md palette (#0B0D10 / #12161B / #262C35 / #3DDC97) -->
+  <rect x="4" y="4" width="120" height="120" rx="20" fill="#0B0D10" stroke="#262C35" stroke-width="4"/>
+  <rect x="16" y="16" width="96" height="96" rx="14" fill="#12161B" stroke="#1E4D3A" stroke-width="2"/>
+  <!-- Minimalist geometric terminal prompt + spark node -->
+  <path d="M36 46 L58 64 L36 82" fill="none" stroke="#3DDC97" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="64" y1="82" x2="92" y2="82" stroke="#E6EAF0" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="86" cy="44" r="8" fill="#3DDC97"/>
+</svg>
