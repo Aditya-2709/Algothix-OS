@@ -1,7 +1,8 @@
--- Algothix OS (ALX) Lite — Awesome WM Configuration (v1.2)
+-- Algothix OS (ALX) Lite — Awesome WM Configuration (v1.3)
 -- Pure Lua using Awesome 4.3 built-ins only (no extra libraries).
--- Features: 28px top bar, 42px bottom dock, window titlebars (min/max/close),
--- desktop icons via pcmanfm --desktop, and Black Hole default wallpaper.
+-- Features: 28px top bar, 46px bottom taskbar with app icons, Windows-style
+-- ALX Start Menu (All Apps icon grid + Sleep/Restart/Shutdown), window
+-- titlebars (min/max/close), desktop icons, and Black Hole default wallpaper.
 
 local gears = require("gears")
 local awful = require("awful")
@@ -85,6 +86,47 @@ awful.layout.layouts = {
     awful.layout.suit.floating,
 }
 
+-- Resolve real icon files from Papirus-Dark / pixmaps / ALX branding
+local function find_icon(names)
+    local dirs = {
+        "/usr/share/icons/Papirus-Dark/32x32/apps/",
+        "/usr/share/icons/Papirus-Dark/48x48/apps/",
+        "/usr/share/icons/Papirus-Dark/32x32/actions/",
+        "/usr/share/icons/Papirus-Dark/24x24/actions/",
+        "/usr/share/icons/hicolor/48x48/apps/",
+        "/usr/share/icons/hicolor/128x128/apps/",
+        "/usr/share/pixmaps/",
+    }
+    for _, name in ipairs(names) do
+        if name:sub(1, 1) == "/" and gears.filesystem.file_readable(name) then
+            return name
+        end
+        for _, dir in ipairs(dirs) do
+            for _, ext in ipairs({ ".svg", ".png" }) do
+                local p = dir .. name .. ext
+                if gears.filesystem.file_readable(p) then
+                    return p
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function make_icon_widget(names, size)
+    local p = find_icon(names)
+    if p then
+        return wibox.widget({
+            image = p,
+            resize = true,
+            forced_width = size,
+            forced_height = size,
+            widget = wibox.widget.imagebox,
+        })
+    end
+    return nil
+end
+
 -- Select best-matching Black Hole PNG wallpaper
 local function pick_wallpaper(s)
     local g = s.geometry
@@ -117,26 +159,39 @@ end
 
 screen.connect_signal("property::geometry", set_wallpaper)
 
--- Helper: clickable pill button for the bottom dock
-local function dock_button(label, cmd, accent)
+-- Helper: taskbar/dock icon button (real icon + label)
+local function dock_button(label, icon_names, action, accent)
     local fg_default = accent and "#06130D" or "#E6EAF0"
     local bg_default = accent and "#3DDC97" or "#1A1F26"
     local bg_hover   = accent and "#5BE8AB" or "#222831"
     local bd_default = accent and "#3DDC97" or "#262C35"
 
+    local inner = { layout = wibox.layout.fixed.horizontal, spacing = 7 }
+    local ic = make_icon_widget(icon_names, 20)
+    if ic then
+        table.insert(inner, {
+            ic,
+            valign = "center",
+            widget = wibox.container.place,
+        })
+    end
+    if label and #label > 0 then
+        table.insert(inner, {
+            text = label,
+            font = "JetBrains Mono Bold 9",
+            align = "center",
+            valign = "center",
+            widget = wibox.widget.textbox,
+        })
+    end
+
     local btn = wibox.widget({
         {
-            {
-                text = label,
-                font = "JetBrains Mono Bold 9",
-                align = "center",
-                valign = "center",
-                widget = wibox.widget.textbox,
-            },
-            left = 12,
-            right = 12,
-            top = 5,
-            bottom = 5,
+            inner,
+            left = 10,
+            right = 10,
+            top = 4,
+            bottom = 4,
             widget = wibox.container.margin,
         },
         bg = bg_default,
@@ -156,12 +211,173 @@ local function dock_button(label, cmd, accent)
         btn.shape_border_color = bd_default
     end)
     btn:buttons(gears.table.join(
-        awful.button({}, 1, function() awful.spawn(cmd) end)
+        awful.button({}, 1, function()
+            if type(action) == "function" then
+                action()
+            else
+                awful.spawn(action)
+            end
+        end)
     ))
     return btn
 end
 
--- Helper: crisp text titlebar button (Minimize / Maximize / Close)
+-- Helper: Windows-style Start Menu row with real icon
+local start_popup = nil
+
+local function menu_item(label, icon_names, cmd)
+    local row = { layout = wibox.layout.fixed.horizontal, spacing = 10 }
+    local ic = make_icon_widget(icon_names, 20)
+    if ic then
+        table.insert(row, { ic, valign = "center", widget = wibox.container.place })
+    end
+    table.insert(row, {
+        text = label,
+        font = "Noto Sans 10",
+        valign = "center",
+        widget = wibox.widget.textbox,
+    })
+
+    local item = wibox.widget({
+        {
+            row,
+            left = 10,
+            right = 10,
+            top = 7,
+            bottom = 7,
+            widget = wibox.container.margin,
+        },
+        bg = "#12161B",
+        fg = "#E6EAF0",
+        shape = function(cr, w, h) gears.shape.rounded_rect(cr, w, h, 6) end,
+        widget = wibox.container.background,
+    })
+
+    item:connect_signal("mouse::enter", function() item.bg = "#1E4D3A" end)
+    item:connect_signal("mouse::leave", function() item.bg = "#12161B" end)
+    item:buttons(gears.table.join(
+        awful.button({}, 1, function()
+            if start_popup then start_popup.visible = false end
+            if type(cmd) == "function" then cmd() else awful.spawn(cmd) end
+        end)
+    ))
+    return item
+end
+
+local function power_btn(label, fg_col, cmd)
+    local b = wibox.widget({
+        {
+            {
+                text = label,
+                font = "JetBrains Mono Bold 9",
+                align = "center",
+                valign = "center",
+                widget = wibox.widget.textbox,
+            },
+            left = 10,
+            right = 10,
+            top = 6,
+            bottom = 6,
+            widget = wibox.container.margin,
+        },
+        bg = "#1A1F26",
+        fg = fg_col,
+        shape = function(cr, w, h) gears.shape.rounded_rect(cr, w, h, 6) end,
+        shape_border_width = 1,
+        shape_border_color = "#262C35",
+        widget = wibox.container.background,
+    })
+    b:connect_signal("mouse::enter", function()
+        b.bg = "#222831"
+        b.shape_border_color = fg_col
+    end)
+    b:connect_signal("mouse::leave", function()
+        b.bg = "#1A1F26"
+        b.shape_border_color = "#262C35"
+    end)
+    b:buttons(gears.table.join(
+        awful.button({}, 1, function()
+            if start_popup then start_popup.visible = false end
+            if type(cmd) == "function" then cmd() else awful.spawn(cmd) end
+        end)
+    ))
+    return b
+end
+
+-- Build the Windows-style Start Menu popup (All Apps + Essentials + Power controls)
+start_popup = awful.popup({
+    visible = false,
+    ontop = true,
+    bg = "#12161B",
+    border_width = 1,
+    border_color = "#262C35",
+    shape = function(cr, w, h) gears.shape.rounded_rect(cr, w, h, 10) end,
+    placement = function(d)
+        awful.placement.bottom_left(d, { margins = { left = 8, bottom = 52 } })
+    end,
+    widget = {
+        {
+            {
+                {
+                    text = "ALGOTHIX OS  //  START",
+                    font = "JetBrains Mono Bold 10",
+                    widget = wibox.widget.textbox,
+                },
+                fg = "#3DDC97",
+                widget = wibox.container.background,
+            },
+            {
+                forced_height = 1,
+                color = "#262C35",
+                widget = wibox.widget.separator,
+            },
+            dock_button("All Apps (Icon Grid)", { "view-app-grid", "applications-other" }, "rofi -show drun", true),
+            {
+                layout = wibox.layout.grid,
+                forced_num_cols = 2,
+                spacing = 4,
+                homogeneous = true,
+                menu_item("Brave Browser", { "brave-browser", "web-browser" }, "brave-browser"),
+                menu_item("VS Code", { "vscode", "visual-studio-code", "code" }, "code"),
+                menu_item("Terminal", { "utilities-terminal", "terminal" }, terminal),
+                menu_item("Files", { "system-file-manager", "pcmanfm" }, "pcmanfm"),
+                menu_item("Calculator", { "galculator", "accessories-calculator" }, "galculator"),
+                menu_item("Text Editor", { "mousepad", "accessories-text-editor" }, "mousepad"),
+                menu_item("Screenshot", { "xfce4-screenshooter", "applets-screenshooter" }, "xfce4-screenshooter"),
+                menu_item("Audio Mixer", { "multimedia-volume-control", "pavucontrol" }, "pavucontrol"),
+                menu_item("Display", { "preferences-desktop-display", "arandr" }, "arandr"),
+                menu_item("Appearance", { "preferences-desktop-theme", "lxappearance" }, "lxappearance"),
+                menu_item("ALX Doctor", { "utilities-system-monitor" }, terminal .. " -e sh -c 'alx-doctor; read -p \"Press Enter...\" _'"),
+                menu_item("Install ALX", { "/usr/share/alx/logo.svg", "system-software-install" }, "/usr/sbin/alx-calamares-launch"),
+            },
+            {
+                forced_height = 1,
+                color = "#262C35",
+                widget = wibox.widget.separator,
+            },
+            {
+                layout = wibox.layout.flex.horizontal,
+                spacing = 8,
+                power_btn("Sleep", "#6AA9FF", "systemctl suspend"),
+                power_btn("Restart", "#F5B94C", "systemctl reboot"),
+                power_btn("Shutdown", "#F26B6B", "systemctl poweroff"),
+                power_btn("Log Out", "#8A94A3", awesome.quit),
+            },
+            spacing = 10,
+            layout = wibox.layout.fixed.vertical,
+        },
+        margins = 14,
+        forced_width = 360,
+        widget = wibox.container.margin,
+    },
+})
+
+local function toggle_start_menu()
+    start_popup.screen = awful.screen.focused()
+    start_popup.visible = not start_popup.visible
+end
+
+-- Helper: crisp titlebar button (Minimize / Maximize / Close)
 local function titlebar_btn(symbol, fg_col, hover_bg, action)
     local b = wibox.widget({
         {
@@ -305,11 +521,11 @@ awful.screen.connect_for_each_screen(function(s)
         },
     })
 
-    -- 42px bottom navigation dock
+    -- 46px bottom taskbar: Windows-style Start button on left + app icon dock centered
     s.mydock = awful.wibar({
         position = "bottom",
         screen = s,
-        height = 42,
+        height = 46,
         bg = "#12161B",
         fg = "#E6EAF0",
         border_width = 1,
@@ -319,25 +535,48 @@ awful.screen.connect_for_each_screen(function(s)
     s.mydock:setup({
         layout = wibox.layout.align.horizontal,
         expand = "none",
-        nil,
         {
+            {
+                dock_button("ALX", { "/usr/share/alx/logo.svg" }, toggle_start_menu, true),
+                left = 8,
+                top = 4,
+                bottom = 4,
+                widget = wibox.container.margin,
+            },
             layout = wibox.layout.fixed.horizontal,
-            spacing = 10,
-            dock_button("Apps", "rofi -show drun", true),
-            dock_button("Terminal", terminal, false),
-            dock_button("Brave", "brave-browser", false),
-            dock_button("VS Code", "code", false),
-            dock_button("Files", "pcmanfm", false),
-            dock_button("Install ALX", "/usr/sbin/alx-calamares-launch", false),
-            dock_button("Help", "alx-cheatsheet", false),
         },
-        nil,
+        {
+            {
+                layout = wibox.layout.fixed.horizontal,
+                spacing = 8,
+                dock_button("Terminal", { "utilities-terminal", "terminal" }, terminal, false),
+                dock_button("Brave", { "brave-browser", "web-browser" }, "brave-browser", false),
+                dock_button("VS Code", { "vscode", "visual-studio-code", "code" }, "code", false),
+                dock_button("Files", { "system-file-manager", "pcmanfm" }, "pcmanfm", false),
+                dock_button("Install ALX", { "/usr/share/alx/logo.svg", "system-software-install" }, "/usr/sbin/alx-calamares-launch", false),
+                dock_button("Help", { "help-browser", "dialog-information" }, "alx-cheatsheet", false),
+            },
+            top = 4,
+            bottom = 4,
+            widget = wibox.container.margin,
+        },
+        {
+            {
+                dock_button("Apps", { "view-app-grid", "applications-other" }, "rofi -show drun", false),
+                right = 8,
+                top = 4,
+                bottom = 4,
+                widget = wibox.container.margin,
+            },
+            layout = wibox.layout.fixed.horizontal,
+        },
     })
 end)
 
 local globalkeys = gears.table.join(
     awful.key({ modkey }, "Return", function() awful.spawn(terminal) end, { description = "open terminal", group = "launcher" }),
     awful.key({ modkey }, "d", function() awful.spawn("rofi -show drun") end, { description = "app launcher (rofi)", group = "launcher" }),
+    awful.key({ modkey }, "a", toggle_start_menu, { description = "toggle ALX Start Menu", group = "launcher" }),
     awful.key({ modkey }, "e", function() awful.spawn("pcmanfm") end, { description = "file manager", group = "launcher" }),
     awful.key({ modkey, "Shift" }, "slash", function() awful.spawn("alx-cheatsheet") end, { description = "keybinding cheat-sheet", group = "launcher" }),
 
@@ -396,7 +635,10 @@ for i = 1, 5 do
 end
 
 local clientbuttons = gears.table.join(
-    awful.button({}, 1, function(c) c:emit_signal("request::activate", "mouse_click", { raise = true }) end),
+    awful.button({}, 1, function(c)
+        if start_popup then start_popup.visible = false end
+        c:emit_signal("request::activate", "mouse_click", { raise = true })
+    end),
     awful.button({ modkey }, 1, function(c)
         c:emit_signal("request::activate", "mouse_click", { raise = true })
         awful.mouse.client.move(c)
@@ -425,7 +667,6 @@ awful.rules.rules = {
         },
     },
     {
-        -- Keep pcmanfm --desktop borderless, titlebar-free, and below all windows
         rule_any = { type = { "desktop" } },
         properties = {
             titlebars_enabled = false,
@@ -447,7 +688,6 @@ awful.rules.rules = {
     },
 }
 
--- Window titlebar with clickable Minimize (_), Maximize ([]), and Close (x)
 client.connect_signal("request::titlebars", function(c)
     local buttons = gears.table.join(
         awful.button({}, 1, function()
@@ -496,7 +736,9 @@ end)
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 
+-- Clean pgrep-guarded autostart (avoids Awesome 4.3 awful.spawn.once gears/table.lua:51 bug)
 awful.spawn.with_shell("xrdb -merge ~/.Xresources")
-awful.spawn.once("dunst")
-awful.spawn.once("nm-applet")
-awful.spawn.once("pcmanfm --desktop")
+awful.spawn.with_shell("pgrep -x dunst >/dev/null || dunst &")
+awful.spawn.with_shell("pgrep -x nm-applet >/dev/null || nm-applet &")
+awful.spawn.with_shell("pgrep -x volumeicon >/dev/null || volumeicon &")
+awful.spawn.with_shell("pgrep -f 'pcmanfm --desktop' >/dev/null || pcmanfm --desktop &")
