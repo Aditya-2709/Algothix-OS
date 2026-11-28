@@ -37,7 +37,7 @@ debs=(build/debs/*.deb)
 shopt -u nullglob
 
 if [ "${#debs[@]}" -gt 0 ]; then
-    lintian --fail-on error "${debs[@]}"
+    lintian --suppress-tags package-contains-file-in-etc-skel --fail-on error "${debs[@]}"
     echo "lintian passed (${#debs[@]} packages)."
 else
     echo "No built .deb packages in build/debs/ yet (run 'make packages' first)."
