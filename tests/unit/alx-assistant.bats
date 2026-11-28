@@ -21,7 +21,7 @@ ROOT_DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)"
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"AGPL-3.0"* ]]
     [[ "${output}" == *"af7465f"* ]]
-    [[ "${output}" == *"alx-assistant"* ]]
+    [[ "${output}" == *"Algothix-OS"* ]]
 }
 
 @test "alx-setup assistant --dry-run warns on internet, API key, low profile, and outbound-only" {
