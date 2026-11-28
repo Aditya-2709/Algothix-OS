@@ -24,7 +24,7 @@ teardown() {
 
     run "${ALX_SETUP}" --version
     [ "${status}" -eq 0 ]
-    [[ "${output}" == *"alx-setup 1.1.0"* ]]
+    [[ "${output}" == *"alx-setup 1.2.0"* ]]
 
     run "${ALX_SETUP}" list
     [ "${status}" -eq 0 ]
